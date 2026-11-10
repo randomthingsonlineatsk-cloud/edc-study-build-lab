@@ -30,6 +30,20 @@ const LESSONS: Lesson[] = [
   { id: 'console', title: '6. Handing the build to the CDM console', body: <>
     <P>The released study build file is the input of the CDM Query &amp; Edit-Check Console, where you then clean the trial's data. The console's simulated sites enter data at fixed visits and forms, so a build that drops one of them would leave data with nowhere to go; the build review's "Console import" area lists these problems before you release. New forms (such as the pregnancy test form) are accepted by the console as additions.</P>
   </> },
+  { id: 'roles', title: '7. Who builds, who tests, who releases', body: <>
+    <P>Validation means evidence that the system does what it should, produced by someone with no stake in the answer. So study teams split the work: a study builder programs the forms and checks, a tester who did not build them runs UAT and signs it, and the lead data manager approves the release. The lab enforces this: you switch roles in the header, only the builder can change the build, only the tester runs and signs UAT, and nobody who changed this version of the build can approve its testing.</P>
+  </> },
+  { id: 'scripts', title: '8. Scripted UAT with test patients', body: <>
+    <P>Test cases on single checks show the logic is right. Scripted UAT shows the system works as sites will use it: a tester enters a test patient through the real eCRF pages, step by step, following a written script ("enter Week 4 on study day 42; expect a visit-window query"), and records what the page does. This finds what single-check tests miss: windows the schedule sets, cross-form checks, show-if fields, missing forms on a visit.</P>
+    <L items={['Each step has its scripted data and an expected result; entering other data is a deviation from the script, not a pass.', 'A failed or blocked step becomes an issue; the builder fixes the build, the tester executes the step again.', 'A result stays valid until the forms, checks or visits it tested change. After a change, only the scripts it touches need running again: regression testing scoped by impact.']} />
+  </> },
+  { id: 'amend', title: '9. Protocol amendments after go-live', body: <>
+    <P>Once sites are entering data, every build change is a controlled change to a live system. A protocol amendment starts with an impact assessment: which visits, forms, fields and checks change, what has to be tested again, and what happens to data already entered. New rules normally apply from the amendment's effective date: a new required field is not demanded on earlier pages, and a new threshold does not raise queries on values that were acceptable when entered (those are reviewed in a listing instead). Participants past a newly added visit are not deviations. Then the new version is built, regression tested, released, and the change is recorded in the data management plan and completion guidelines.</P>
+  </> },
+  { id: 'standards', title: '10. ODM and the digital protocol (USDM)', body: <>
+    <P>CDISC ODM (the Operational Data Model, version 2.0) is the vendor-neutral XML format for clinical study metadata and data. A study build in ODM lists the study events (visits), item groups (forms), items (fields) with their questions, codelists, conditions and range checks, so one system's design can be read by another. The lab exports the build as ODM v2.0 and its tests validate the file against the CDISC schema.</P>
+    <P>CDISC USDM (the Unified Study Definitions Model; version 4 in June 2025) holds the protocol itself as data: study design, encounters, activities linked to biomedical concepts, the schedule timeline with timings and windows, and eligibility criteria. It is aligned with the ICH M11 template, so a structured protocol can feed the build directly. Generators can then draft the EDC build, but they miss things: a timing read the wrong way, an activity without a mapped form, a footnote that is only text, log forms placed on every visit. Mission M5 is reviewing such a draft.</P>
+  </> },
 ]
 
 export default function Learn() {
@@ -45,6 +59,8 @@ export default function Learn() {
           <a className="text-lab-fda underline" href="https://www.ich.org/page/multidisciplinary-guidelines" target="_blank" rel="noreferrer">ICH M11 Clinical electronic Structured Harmonised Protocol (CeSHarP), Step 4 November 2025</a>,
           <a className="text-lab-fda underline" href="https://www.cdisc.org/standards/foundational/cdash" target="_blank" rel="noreferrer">CDISC CDASH (CDASHIG v2.3)</a>,
           <a className="text-lab-fda underline" href="https://www.cdisc.org/standards/terminology/controlled-terminology" target="_blank" rel="noreferrer">CDISC Controlled Terminology</a>,
+          <a className="text-lab-fda underline" href="https://github.com/cdisc-org/DataExchange-ODM" target="_blank" rel="noreferrer">CDISC ODM v2.0 specification and schema</a>,
+          <a className="text-lab-fda underline" href="https://www.cdisc.org/standards/foundational/usdm" target="_blank" rel="noreferrer">CDISC Unified Study Definitions Model (USDM)</a>,
         ]} />
       </Panel>
     </div>

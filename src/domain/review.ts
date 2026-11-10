@@ -2,7 +2,7 @@
 // the edit checks the protocol calls for, and against what the CDM console can import.
 // Every finding names the protocol section or the rule behind it.
 
-import { M11 } from './m11'
+import { protocolOf, AMENDMENT_EFFECTIVE } from './m11'
 import { FORMS as CONSOLE_FORMS, VISITS as CONSOLE_VISITS, CODELISTS as CONSOLE_CODELISTS } from './study'
 import { checkErrors, type LabProject, type StudyBuild } from './lab'
 
@@ -15,11 +15,11 @@ export const AREA_LABEL: Record<Area, string> = { protocol: 'Protocol coverage',
 const STRUCTURAL = new Set(['VISOCCUR', 'VISDAT', 'UNSREAS', 'LBREFID', 'LBTIM', 'PREGCBP', 'PREGTYP', 'EXCOMPL', 'BMI'])
 const OPERATIONAL_FORMS: Record<string, string> = { SV: '11.7 (visit occurrence)', DV: '11.10 (protocol deviations are recorded in the eCRF)' }
 
-const visitIds = M11.visits.map((v) => v.id)
-const formsAt = (b: StudyBuild, form: string) => b.visits.filter((v) => visitIds.includes(v.id) && v.forms.includes(form)).map((v) => v.id)
+const formsAtIn = (ids: string[]) => (b: StudyBuild, form: string) => b.visits.filter((v) => ids.includes(v.id) && v.forms.includes(form)).map((v) => v.id)
 
 export function reviewProtocol(p: LabProject): Finding[] {
   const b = p.build, out: Finding[] = []
+  const M11 = protocolOf(p), formsAt = formsAtIn(M11.visits.map((v) => v.id))
   const add = (f: Finding) => out.push(f)
   // Visits.
   for (const sv of M11.visits) {
@@ -27,6 +27,11 @@ export function reviewProtocol(p: LabProject): Finding[] {
     if (!v) { add({ id: `P-visit-${sv.id}`, area: 'protocol', sev: 'High', where: sv.name, text: `The schedule of activities has ${sv.name} (study day ${sv.lo} to ${sv.hi}); the build has no ${sv.id} visit.`, fix: 'Add the visit (Schedule: create from the protocol).', ref: 'M11 1.3' }); continue }
     if (v.lo !== sv.lo || v.hi !== sv.hi) add({ id: `P-window-${sv.id}`, area: 'protocol', sev: 'Medium', where: sv.name, text: `The protocol window is study day ${sv.lo} to ${sv.hi}; the build has ${v.lo} to ${v.hi}. The visit window check uses the build's window.`, fix: `Set the window to ${sv.lo} to ${sv.hi}.`, ref: 'M11 1.3' })
     if (!v.forms.includes('SV')) add({ id: `P-sv-${sv.id}`, area: 'protocol', sev: 'High', where: sv.name, text: `${sv.name} has no Visit (SV) form, so its occurrence and date cannot be recorded or windowed.`, fix: 'Add SV to the visit.', ref: 'M11 11.7' })
+  }
+  // Every scheduled visit after Day 1 needs a visit-window check that runs there.
+  for (const sv of M11.visits.filter((x) => !['SCR', 'D1'].includes(x.id) && b.visits.some((v) => v.id === x.id))) {
+    const runs = b.checks.some((c) => c.active && c.form === 'SV' && /winlo\(\)|winhi\(\)/.test(c.expr) && (!c.visits || c.visits.includes(sv.id)))
+    if (!runs && b.checks.some((c) => c.form === 'SV' && /winlo\(\)/.test(c.expr))) add({ id: `P-wincheck-${sv.id}`, area: 'protocol', sev: 'High', where: sv.name, text: `No visit-window check runs at ${sv.id}, so a ${sv.name} date outside days ${sv.lo} to ${sv.hi} raises no query.`, fix: `Add ${sv.id} to the visits of the window check (and of the visit-order check).`, ref: 'M11 1.3' })
   }
   if (!b.visits.some((v) => v.id === 'UNS')) add({ id: 'P-uns', area: 'protocol', sev: 'Low', where: 'Unscheduled', text: 'There is no unscheduled visit, so a repeat test or an extra safety visit has nowhere to go.', fix: 'Add an unscheduled visit (UNS) with SV and the forms a repeat assessment needs.', ref: 'Common practice' })
   // Procedures: each is collected on its form, at its visits.
@@ -106,6 +111,7 @@ const CHECKABLE = new Set(['IN01', 'IN02', 'EX03', 'EX04'])
 export interface NeedCheck { id: string; ref: string; text: string; covered: string[] }
 export function neededChecks(p: LabProject): NeedCheck[] {
   const b = p.build, out: NeedCheck[] = []
+  const M11 = protocolOf(p)
   const by = (pred: (c: StudyBuild['checks'][number]) => boolean) => b.checks.filter((c) => c.active && pred(c)).map((c) => c.id)
   out.push({ id: 'N-window', ref: 'M11 1.3', text: 'Visit date outside the protocol window (uses each visit\'s window)', covered: by((c) => c.form === 'SV' && /winlo\(\)|winhi\(\)/.test(c.expr)) })
   out.push({ id: 'N-consent', ref: 'M11 11.3', text: 'A visit or procedure dated before informed consent', covered: by((c) => /consent\(\)/.test(c.expr)) })
@@ -114,7 +120,8 @@ export function neededChecks(p: LabProject): NeedCheck[] {
   for (const c of [...M11.inclusion, ...M11.exclusion].filter((x) => CHECKABLE.has(x.code))) out.push({ id: `N-${c.code}`, ref: c.code.startsWith('IN') ? 'M11 5.2' : 'M11 5.3', text: `Eligible, but ${c.code} is not met: ${c.text}`, covered: by((x) => `${x.expr} ${x.title} ${x.message}`.includes(c.code)) })
   out.push({ id: 'N-sysbp', ref: 'M11 8.4.2', text: 'Systolic blood pressure outside a plausible range', covered: by((c) => c.form === 'VS' && c.category === 'range' && /SYSBP/.test(c.expr)) })
   out.push({ id: 'N-diabp', ref: 'M11 8.4.2', text: 'Diastolic blood pressure outside a plausible range', covered: by((c) => c.form === 'VS' && c.category === 'range' && /DIABP/.test(c.expr)) })
-  out.push({ id: 'N-k', ref: 'M11 8.4.4, 12.1', text: 'Potassium above 5.5 mmol/L (safety follow-up)', covered: by((c) => c.form === 'LB' && /\bK\b/.test(c.expr) && /5\.5/.test(c.expr)) })
+  if (M11.kThreshold === 5.5) out.push({ id: 'N-k', ref: 'M11 8.4.4, 12.1', text: 'Potassium above 5.5 mmol/L (safety follow-up)', covered: by((c) => c.form === 'LB' && /\bK\b/.test(c.expr) && /5\.5/.test(c.expr)) })
+  else out.push({ id: 'N-k', ref: 'Amendment 3, M11 8.4.4', text: `Potassium at or above 5.0 mmol/L from ${AMENDMENT_EFFECTIVE} (above 5.5 before)`, covered: by((c) => c.form === 'LB' && /\bK\b/.test(c.expr) && /\b5(\.0)?\b(?!\.)/.test(c.expr.replace(/5\.5/g, '')) && c.expr.includes(AMENDMENT_EFFECTIVE)) })
   out.push({ id: 'N-sae', ref: 'M11 9.2.1', text: 'A serious AE with no seriousness criterion ticked', covered: by((c) => c.form === 'AE' && /AESER/.test(c.expr) && /any\(/.test(c.expr)) })
   out.push({ id: 'N-aedate', ref: 'M11 9.2.1', text: 'An AE end date before its start date', covered: by((c) => c.form === 'AE' && /AEENDAT/.test(c.expr) && /AESTDAT/.test(c.expr)) })
   if (b.forms.PREG) out.push({ id: 'N-preg', ref: 'M11 8.4.5', text: 'A positive pregnancy test (stop dosing, report)', covered: by((c) => c.form === 'PREG' && /PREGRES/.test(c.expr) && /POSITIVE/.test(c.expr)) })

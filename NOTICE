@@ -8,11 +8,18 @@ If you redistribute or build on this work, you must keep this NOTICE file
 and the LICENSE (Apache License 2.0).
 
 The protocol HLV-204-201 (VASCLEAR-2), the drug Vasclarin (VSC-9), the sponsor and all
-data are fictional. Guidelines and standards (ICH M11, ICH E6(R3), CDISC CDASH, SDTM and
-Controlled Terminology) are named for education; descriptions are summaries, not regulatory
+data are fictional. Guidelines and standards (ICH M11, ICH E6(R3), CDISC CDASH, SDTM, ODM,
+USDM and Controlled Terminology) are named for education; descriptions are summaries, not regulatory
 advice. No commercial EDC system is reproduced. The app is not a validated system, its
 signatures are practice signatures, and it must not hold real study data. Everything stays
 in the browser.
+
+The USDM file is a teaching subset shaped after USDM v4, not a conformant USDM file, and its
+terms are not CDISC controlled terminology codes. The team members' names are fictional.
+
+tests/odm-v2.0-schema contains the CDISC ODM v2.0 XML schema from
+https://github.com/cdisc-org/DataExchange-ODM, Copyright (c) 2022 cdisc, MIT License (see the
+LICENSE file in that folder). It is used only by the tests.
 
 The study definition, check language and evaluation engine are shared with the CDM Query &
 Edit-Check Console by the same author (Apache License 2.0).

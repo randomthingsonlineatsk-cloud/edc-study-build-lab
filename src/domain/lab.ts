@@ -11,10 +11,11 @@
 import { FORMS as REF_FORMS, VISITS as REF_VISITS, CODELISTS as REF_CODELISTS, LOG_FORMS as REF_LOG, type FormDef, type Visit, type Field } from './study'
 import { SHIPPED_CHECKS, CTX_FNS, CHECK_BUGS } from './checks'
 import { CCG_GENERAL, CCG_FORM, CCG_FIELD } from './dmp'
-import { M11 } from './m11'
+import { M11, protocolOf } from './m11'
 import type { Check, CheckTest } from './types'
 import { validate } from './expr'
 import { runTest } from './engine'
+import { scriptState } from './scripts'
 
 export const BUILD_FORMAT = 'cdm-study-build'
 export const PROTOCOL_ID = 'HLV-204-201'
@@ -33,10 +34,20 @@ export interface StudyBuild {
 export interface Signature { name: string; role: string; meaning: string; utc: string }
 export interface UatStep { checkId: string; test: string; expected: boolean; actual: boolean | 'error'; utc: string; by: string }
 export interface UatIssue { id: string; checkId: string; text: string; status: 'open' | 'fixed' | 'accepted'; resolution?: string; utc: string }
-export interface Uat { runs: UatStep[]; issues: UatIssue[]; summary?: string; signed?: Signature; buildHash?: string }
+export interface ScriptResult { scriptId: string; stepId: string; status: 'pass' | 'fail' | 'blocked' | 'deviation'; detail: string; comment?: string; by: string; utc: string; buildHash: string }
+export interface CasebookEntry { visit: string; form: string; inst: number; values: Record<string, string> }
+export interface Uat { runs: UatStep[]; issues: UatIssue[]; summary?: string; signed?: Signature; buildHash?: string; scripts?: ScriptResult[]; patients?: Record<string, CasebookEntry[]>; runBy?: string; runHash?: string }
 export interface Release { version: string; utc: string; hash: string; signed: Signature; notes: string }
 
-export type StartKind = 'blank' | 'library' | 'draft'
+export type StartKind = 'blank' | 'library' | 'draft' | 'usdm' | 'amend'
+// Roles: the builder changes the build, the tester runs and signs UAT, the lead data manager
+// releases. ICH E6(R3) expects computerised systems to be validated with documented testing; in
+// practice the person who tests and approves a build is not the person who programmed it.
+export type Role = 'builder' | 'tester' | 'lead'
+export interface Member { name: string; role: Role }
+export const ROLE_LABEL: Record<Role, string> = { builder: 'Study builder', tester: 'UAT tester', lead: 'Lead data manager' }
+export const ROLE_TEXT: Record<Role, string> = { builder: 'study builder', tester: 'UAT tester', lead: 'lead data manager' }
+export const DEFAULT_TEAM: Member[] = [{ name: 'Priya Nair', role: 'builder' }, { name: 'Daniel Okafor', role: 'tester' }, { name: 'Mei Chen', role: 'lead' }]
 export interface LabProject {
   schema: 1; id: string; name: string; userId: string; classId: string
   createdUtc: string; updatedUtc: string
@@ -45,7 +56,11 @@ export interface LabProject {
   logForms: string[]          // subject-level repeating forms, collected at any time
   uat: Uat
   releases: Release[]
-  history: { utc: string; what: string }[]
+  history: { utc: string; what: string; by?: string; build?: boolean }[]
+  team: Member[]; as: number
+  protocol?: 'A3'             // the protocol version in force: absent = version 2.0, 'A3' = amendment 3
+  automation?: string[]       // notes from the automated first-pass build (USDM start)
+  impact?: Record<string, string> // the amendment impact assessment answers
   mission?: { id: string; startedUtc: string; level: 'guided' | 'standard' | 'expert'; endedUtc?: string; score?: number; detail?: string[] }
 }
 
@@ -130,20 +145,45 @@ export function createProject(start: StartKind = 'library', opts: { name?: strin
   return {
     schema: 1, id: uid('b-'), name: opts.name ?? (start === 'draft' ? 'VASCLEAR-2 build (from the console draft)' : start === 'blank' ? 'VASCLEAR-2 build (blank)' : 'VASCLEAR-2 build'),
     userId: opts.userId ?? 'local', classId: opts.classId ?? '', createdUtc: t, updatedUtc: t, start,
-    build, logForms: start === 'draft' ? [...REF_LOG] : [], uat: { runs: [], issues: [] }, releases: [], history: [{ utc: t, what: `Build started (${start})` }],
+    build, logForms: start === 'draft' ? [...REF_LOG] : [], uat: { runs: [], issues: [] }, releases: [], history: [{ utc: t, what: `Build started (${start})`, by: DEFAULT_TEAM[0].name, build: true }],
+    team: clone(DEFAULT_TEAM), as: 0,
   }
 }
 
-export function log(p: LabProject, what: string) { p.history.push({ utc: now(), what }); p.updatedUtc = now() }
+// Projects saved by an earlier version get the fields added since.
+export function upgrade(p: LabProject): LabProject {
+  if (!Array.isArray(p.team) || !p.team.length) { p.team = clone(DEFAULT_TEAM); p.as = 0 }
+  if (typeof p.as !== 'number' || !p.team[p.as]) p.as = 0
+  return p
+}
+export const me = (p: LabProject): Member => p.team?.[p.as] ?? DEFAULT_TEAM[0]
+export function needRole(p: LabProject, role: Role, what: string) {
+  const m = me(p)
+  if (m.role !== role) throw new Error(`${what} is for the ${ROLE_TEXT[role]}. You are working as ${m.name} (${ROLE_TEXT[m.role]}): switch roles in the header.`)
+}
+// Everyone who changed the build since it was last released (or since it started).
+export function buildersOf(p: LabProject): string[] {
+  const since = p.releases.at(-1)?.utc ?? ''
+  return [...new Set(p.history.filter((h) => h.build && h.by && h.utc >= since).map((h) => h.by!))]
+}
+export function setTeam(p: LabProject, team: Member[]) {
+  if (!team.length || team.some((m) => !m.name.trim())) throw new Error('Every team member needs a name.')
+  for (const r of ['builder', 'tester', 'lead'] as Role[]) if (!team.some((m) => m.role === r)) throw new Error(`The team needs a ${ROLE_TEXT[r]}.`)
+  p.team = team.map((m) => ({ name: m.name.trim(), role: m.role })); if (!p.team[p.as]) p.as = 0
+  log(p, 'Team changed')
+}
+
+export function log(p: LabProject, what: string, build = false) { p.history.push({ utc: now(), what, by: me(p).name, ...(build ? { build } : {}) }); p.updatedUtc = now() }
 // Any change to the build after UAT sign-off reopens UAT.
 export function touched(p: LabProject, what: string) {
-  log(p, what)
+  needRole(p, 'builder', 'Changing the build')
+  log(p, what, true)
   if (p.uat.signed && p.uat.buildHash !== buildHash(p.build)) { p.uat.signed = undefined; log(p, 'UAT sign-off withdrawn: the build changed after sign-off') }
 }
 
 // ---------- editing the schedule ----------
 export function visitsFromProtocol(p: LabProject) {
-  for (const sv of M11.visits) {
+  for (const sv of protocolOf(p).visits) {
     if (p.build.visits.some((v) => v.id === sv.id)) continue
     const day = sv.id === 'SCR' ? -14 : Math.round((sv.lo + sv.hi) / 2)
     p.build.visits.push({ id: sv.id, name: sv.name, day, lo: sv.lo, hi: sv.hi, forms: [] })
@@ -153,12 +193,16 @@ export function visitsFromProtocol(p: LabProject) {
 }
 export function setVisit(p: LabProject, id: string, patch: Partial<Visit>) {
   const v = p.build.visits.find((x) => x.id === id); if (!v) throw new Error(`No visit ${id}`)
-  Object.assign(v, patch); touched(p, `Visit ${id} changed`)
+  Object.assign(v, patch); if ('day' in patch) sortVisits(p.build); touched(p, `Visit ${id} changed`)
 }
 export function addVisit(p: LabProject, v: Visit) {
   if (!/^[A-Z][A-Z0-9]{0,7}$/.test(v.id)) throw new Error('A visit ID is 1 to 8 capital letters or digits, starting with a letter.')
   if (p.build.visits.some((x) => x.id === v.id)) throw new Error(`Visit ${v.id} already exists.`)
-  p.build.visits.push(v); touched(p, `Visit ${v.id} added`)
+  p.build.visits.push(v); sortVisits(p.build); touched(p, `Visit ${v.id} added`)
+}
+// Scheduled visits in study-day order, unscheduled last: the order decides "the previous visit".
+export function sortVisits(b: StudyBuild) {
+  b.visits.sort((a, c) => (a.id === 'UNS' ? 1 : 0) - (c.id === 'UNS' ? 1 : 0) || a.day - c.day)
 }
 export function removeVisit(p: LabProject, id: string) { p.build.visits = p.build.visits.filter((v) => v.id !== id); touched(p, `Visit ${id} removed`) }
 export function toggleFormAtVisit(p: LabProject, visit: string, form: string) {
@@ -272,16 +316,19 @@ export const CONTEXT_HELP: Record<string, string> = {
 }
 
 // ---------- UAT ----------
-export function runUat(p: LabProject, by: string): UatStep[] {
+export function runUat(p: LabProject, by = me(p).name): UatStep[] {
+  needRole(p, 'tester', 'Running UAT')
   const utc = now()
+  p.uat.runBy = by
   const steps = p.build.checks.filter((c) => c.active).flatMap((c) => (checkErrors(p.build, c) ? [{ checkId: c.id, test: '(does not parse)', expected: true, actual: 'error' as const, utc, by }]
     : c.tests.map((t) => ({ checkId: c.id, test: t.name, expected: t.fire, actual: runTest(c, t), utc, by }))))
   p.uat.runs = steps
+  p.uat.runHash = buildHash(p.build)
   for (const s of steps.filter((x) => x.actual !== x.expected)) {
     if (!p.uat.issues.some((i) => i.checkId === s.checkId && i.status === 'open')) p.uat.issues.push({ id: uid('U-'), checkId: s.checkId, text: `${s.checkId} "${s.test}": expected ${s.expected ? 'to fire' : 'not to fire'}, ${s.actual === 'error' ? 'the check could not run' : s.actual ? 'it fired' : 'it did not fire'}.`, status: 'open', utc })
   }
   // An issue is fixed when its check now passes all its tests.
-  for (const i of p.uat.issues.filter((x) => x.status === 'open')) {
+  for (const i of p.uat.issues.filter((x) => x.status === 'open' && !x.checkId.includes('.'))) {
     if (!steps.some((s) => s.checkId === i.checkId && s.actual !== s.expected)) { i.status = 'fixed'; i.resolution = 'Retested: all test cases pass.' }
   }
   log(p, `UAT run: ${steps.length} test cases, ${steps.filter((s) => s.actual !== s.expected).length} failed`)
@@ -294,12 +341,23 @@ export function uatState(p: LabProject) {
   const untested = p.build.checks.filter((c) => c.active && !tested.has(c.id)).map((c) => c.id)
   const fewTests = p.build.checks.filter((c) => c.active && (c.tests.length < 2 || !c.tests.some((t) => t.fire) || !c.tests.some((t) => !t.fire))).map((c) => c.id)
   const open = p.uat.issues.filter((i) => i.status === 'open')
-  const stale = !!runs.length && p.uat.buildHash !== undefined && p.uat.buildHash !== buildHash(p.build)
-  return { runs: runs.length, failed: failed.length, untested, fewTests, open: open.length, stale, ready: runs.length > 0 && !failed.length && !untested.length && !open.length && !fewTests.length }
+  const stale = !!runs.length && !!p.uat.runHash && p.uat.runHash !== buildHash(p.build)
+  const sc = scriptState(p)
+  return { runs: runs.length, failed: failed.length, untested, fewTests, open: open.length, stale, scripts: sc,
+    ready: runs.length > 0 && !stale && !failed.length && !untested.length && !open.length && !fewTests.length && sc.done }
+}
+export function acceptIssue(p: LabProject, id: string, why: string) {
+  needRole(p, 'tester', 'Accepting a UAT issue')
+  if (!why.trim()) throw new Error('Give the reason the issue can be accepted without a fix.')
+  const it = p.uat.issues.find((y) => y.id === id); if (!it || it.status !== 'open') throw new Error('That issue is not open.')
+  it.status = 'accepted'; it.resolution = `Accepted by ${me(p).name}: ${why.trim()}`; log(p, `UAT issue on ${it.checkId} accepted`)
 }
 export function signUat(p: LabProject, s: Omit<Signature, 'utc'>) {
+  needRole(p, 'tester', 'Signing UAT')
+  if (s.name.trim().toLowerCase() !== me(p).name.toLowerCase()) throw new Error(`Sign with your own name (${me(p).name}).`)
+  if (buildersOf(p).some((b) => b.toLowerCase() === s.name.trim().toLowerCase())) throw new Error(`${s.name} changed this build, so cannot approve its testing. UAT is signed by someone independent of the build.`)
   const st = uatState(p)
-  if (!st.ready) throw new Error('UAT is not complete: run every test, fix or accept every issue, and give every check a firing and a passing test case.')
+  if (!st.ready) throw new Error('UAT is not complete: run every test, execute every test script, fix or accept every issue, and give every check a firing and a passing test case.')
   if (!p.uat.summary?.trim()) throw new Error('Write the UAT summary first.')
   p.uat.signed = { ...s, utc: now() }; p.uat.buildHash = buildHash(p.build)
   log(p, `UAT signed by ${s.name} (${s.role})`)
@@ -320,9 +378,13 @@ export function exportBuild(p: LabProject): StudyBuild {
   return b
 }
 export function release(p: LabProject, version: string, notes: string, s: Omit<Signature, 'utc'>) {
+  needRole(p, 'lead', 'Releasing a build')
+  if (s.name.trim().toLowerCase() !== me(p).name.toLowerCase()) throw new Error(`Sign with your own name (${me(p).name}).`)
   if (!p.uat.signed || p.uat.buildHash !== buildHash(p.build)) throw new Error('Release needs a UAT sign-off on this exact build.')
   if (!/^\d+\.\d+$/.test(version)) throw new Error('A build version looks like 1.0 or 1.1.')
   if (p.releases.some((r) => r.version === version)) throw new Error(`Version ${version} was already released.`)
+  const last = p.releases.at(-1)
+  if (last && Number(version) <= Number(last.version)) throw new Error(`Version ${version} must be later than ${last.version}.`)
   p.build.study.buildVersion = version
   p.uat.buildHash = buildHash(p.build)
   const r: Release = { version, utc: now(), hash: buildHash(p.build), signed: { ...s, utc: now() }, notes }
@@ -331,6 +393,7 @@ export function release(p: LabProject, version: string, notes: string, s: Omit<S
 }
 
 export function importBuild(p: LabProject, text: string): string[] {
+  needRole(p, 'builder', 'Importing a build')
   let b: StudyBuild
   try { b = JSON.parse(text) } catch { throw new Error('The file is not valid JSON.') }
   if (b?.format !== BUILD_FORMAT || b.version !== 1) throw new Error(`This is not a ${BUILD_FORMAT} version 1 file.`)

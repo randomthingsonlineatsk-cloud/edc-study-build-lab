@@ -260,3 +260,35 @@ export function scoreTwin(answers: Record<string, string>) {
   const missed = rows.filter((r) => TWIN_ANSWERS[r.id]?.answer !== 'none' && answers[r.id] === 'none').length
   return { score: Math.round((right / rows.length) * 100), right, total: rows.length, falseFlags, missed, unanswered: rows.filter((r) => !answers[r.id]).length }
 }
+
+// ---------- protocol versions: amendment 3 (the lab's mission M4) ----------
+// After go-live, a potassium signal in blinded safety review leads to amendment 3 (protocol
+// version 4.0). The build must follow it: a new Week 6 safety visit, serum magnesium added to
+// the local laboratory panel, and a lower potassium threshold for safety follow-up from the date
+// the amendment takes effect. Fictional, like the rest of the protocol.
+export const AMENDMENT_EFFECTIVE = '2026-09-15'
+export interface AmendmentChange { id: string; section: string; text: string; rationale: string }
+export const AMENDMENT_3 = {
+  id: 'A3', version: '4.0', date: '2026-08-20', effective: AMENDMENT_EFFECTIVE,
+  summary: 'Amendment 3 (protocol version 4.0, global, substantial). Approved by ethics committees and regulators; in force at each site from 15 September 2026.',
+  changes: [
+    { id: 'A3-1', section: '1.3, 8.4.4', text: 'A Week 6 safety visit (study day 40 to 44) is added: visit record and the local safety laboratory only.', rationale: 'Earlier potassium monitoring between Week 4 and Week 8.' },
+    { id: 'A3-2', section: '8.4.4, 12.1', text: 'Serum magnesium (mmol/L) is added to the local safety laboratory at Screening, Week 4, Week 6 and Week 12. It is required from the effective date; results before that date are not collected retrospectively.', rationale: 'Hypomagnesaemia can accompany potassium disturbance.' },
+    { id: 'A3-3', section: '8.4.4, 9.2.4', text: 'The potassium threshold for safety follow-up falls from 5.5 to 5.0 mmol/L for results dated on or after the effective date. Results before that date keep the 5.5 mmol/L threshold; the medical monitor reviews earlier results between 5.0 and 5.5 mmol/L in a listing, without site queries.', rationale: 'Two participants with potassium of 5.2 to 5.4 mmol/L went on to exceed 6.0 mmol/L.' },
+  ] as AmendmentChange[],
+}
+
+export interface ProtocolDef { version: string; amendment?: typeof AMENDMENT_3; visits: SoaVisit[]; procedures: Procedure[]; inclusion: Criterion[]; exclusion: Criterion[]; statements: { section: string; text: string }[]; kThreshold: number }
+const V2: ProtocolDef = { version: '2.0', visits: M11.visits, procedures: M11.procedures, inclusion: M11.inclusion, exclusion: M11.exclusion, statements: M11.statements, kThreshold: 5.5 }
+function amended(): ProtocolDef {
+  const visits = [...M11.visits]
+  visits.splice(visits.findIndex((v) => v.id === 'W8'), 0, { id: 'W6', name: 'Week 6 (safety)', lo: 40, hi: 44 })
+  const procedures = M11.procedures.map((pr) => {
+    if (pr.id === 'P08') return { ...pr, name: 'Local safety laboratory (potassium, magnesium, creatinine, ALT)', fields: [...pr.fields, 'MG'], visits: ['SCR', 'W4', 'W6', 'W12'] }
+    return pr
+  })
+  return { version: '4.0', amendment: AMENDMENT_3, visits, procedures, inclusion: M11.inclusion, exclusion: M11.exclusion, kThreshold: 5.0,
+    statements: [...M11.statements, { section: '8.4.4', text: `From ${AMENDMENT_EFFECTIVE}, potassium of 5.0 mmol/L or more triggers safety follow-up (5.5 mmol/L before).` }] }
+}
+const A3 = amended()
+export const protocolOf = (p: { protocol?: 'A3' }): ProtocolDef => (p.protocol === 'A3' ? A3 : V2)

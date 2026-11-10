@@ -1,7 +1,12 @@
 // Missions: set tasks with a grade. The grade looks at the build itself, not at what the learner
 // says was done, and it re-tests fixed checks with the specification's own test cases, so a check
 // cannot be "fixed" by changing its expected results.
-import { createProject, buildHash, uatState, type LabProject, type StartKind } from './lab'
+import { createProject, buildHash, uatState, buildersOf, type LabProject, type StartKind } from './lab'
+import { createAmendProject, impactScore, historicImpact } from './amendment'
+import { createFromUsdm } from './usdm'
+import { AMENDMENT_EFFECTIVE } from './m11'
+import { scriptState } from './scripts'
+import { hash } from './util'
 import { review } from './review'
 import { runTest } from './engine'
 import { CHECK_BUGS, freshChecks } from './checks'
@@ -30,11 +35,23 @@ const covered = (p: LabProject, ids: string[]) => {
   const f = review(p).all
   return ids.every((id) => !f.some((x) => x.id === id))
 }
-const uatSigned = (p: LabProject) => !!p.uat.signed && p.uat.buildHash === buildHash(p.build)
+const uatSigned = (p: LabProject) => !!p.uat.signed && p.uat.buildHash === buildHash(p.build) && !buildersOf(p).some((b) => b.toLowerCase() === p.uat.signed!.name.toLowerCase())
 const released = (p: LabProject) => p.releases.length > 0 && p.releases.at(-1)!.hash === buildHash(p.build)
 const noHigh = (p: LabProject) => review(p).high === 0
 const noMedium = (p: LabProject) => review(p).medium === 0
 const acceptedOnly = (p: LabProject) => !p.uat.issues.some((i) => i.status === 'accepted' && Object.keys(CHECK_BUGS).includes(i.checkId) && !bugFixed(p, i.checkId))
+
+// Does any active check on FORM.FIELD fire for these values (union of the learner's checks)?
+function anyFires(p: LabProject, form: string, field: string, t: CheckTest): boolean {
+  return p.build.checks.some((c) => c.active && c.form === form && c.field === field && (!c.visits || c.visits.includes(t.ctx?.vis ?? 'W12')) && runTest(c, t) === true)
+}
+const E = AMENDMENT_EFFECTIVE
+const kCase = (k: string, date: string, vis: string) => ({ name: '', values: { K: k, LBDAT: date, GLUCU: 'mmol/L' }, fire: true, ctx: { vis } })
+export const potassiumRuleOk = (p: LabProject) =>
+  anyFires(p, 'LB', 'K', kCase('5.2', '2026-09-20', 'W12')) && anyFires(p, 'LB', 'K', kCase('5.0', E, 'W12')) && !anyFires(p, 'LB', 'K', kCase('4.9', '2026-09-20', 'W12'))
+  && !anyFires(p, 'LB', 'K', kCase('5.2', '2026-08-20', 'W4')) && anyFires(p, 'LB', 'K', kCase('5.6', '2026-08-20', 'W4')) && !anyFires(p, 'LB', 'K', kCase('5.2', '2026-09-20', 'SCR'))
+const mgCase = (mg: string, date: string) => ({ name: '', values: { MG: mg, LBDAT: date, K: '4.5' }, fire: true, ctx: { vis: 'W12' } })
+export const magnesiumRuleOk = (p: LabProject) => anyFires(p, 'LB', 'MG', mgCase('', '2026-09-20')) && !anyFires(p, 'LB', 'MG', mgCase('', '2026-08-20')) && !anyFires(p, 'LB', 'MG', mgCase('0.8', '2026-09-20'))
 
 const BUG_GOALS: Goal[] = [
   { id: 'bug-vs09', text: 'VS-09 (diastolic not lower than systolic) works to its specification', hint: 'Run UAT: the "equal values" test fails. The specification says "not lower than", so equal values must fire.', weight: 10, met: (p) => bugFixed(p, 'VS-09') },
@@ -71,19 +88,51 @@ export const MISSIONS: Mission[] = [
   },
   {
     id: 'M3', title: 'UAT: find the three faulty checks', start: 'draft',
-    brief: 'A short mission on testing. The draft has three edit checks that do not match their specification. Run UAT, read each failure, correct the logic (not the expected result), retest and sign UAT.',
+    brief: 'A short mission on testing. The draft has three edit checks that do not match their specification. As the tester, run the test cases and the scripts S2, S3 and S4; raise the failures; as the builder, correct the logic (not the expected result); then re-test until they pass. Scripts for parts the draft lacks (S5, S6) are blocked: that is expected here.',
     goals: [
-      ...BUG_GOALS.map((g) => ({ ...g, weight: 25 })),
-      { id: 'uat', text: 'UAT is signed with every issue fixed, none merely accepted', hint: 'Write a summary that names the three issues and how each was fixed.', weight: 25, met: (p) => uatSigned(p) && !p.uat.issues.some((i) => i.status === 'accepted') },
+      ...BUG_GOALS.map((g) => ({ ...g, weight: 20 })),
+      { id: 'scripts', text: 'Scripts S2, S3 and S4 executed and passed on the corrected build', hint: 'UAT: scripted testing. Each script enters a test patient through the eCRF.', weight: 25, met: (p) => ['S2', 'S3', 'S4'].every((id) => scriptState(p).rows.find((r) => r.id === id)?.done) },
+      { id: 'runs', text: 'All check test cases pass, and no issue on a faulty check was merely accepted', hint: 'Run UAT again after the fixes, as the tester.', weight: 15, met: (p) => { const u = uatState(p); return u.runs > 0 && u.failed === 0 && !u.stale && !p.uat.issues.some((i) => i.status === 'accepted' && !i.checkId.includes('.')) } },
     ],
   },
+  {
+    id: 'M4', title: 'Protocol amendment after go-live', start: 'amend',
+    brief: 'Build 1.0 is in production and sites have entered data. Amendment 3 adds a Week 6 safety visit, serum magnesium and a lower potassium threshold from its effective date. Assess the impact, build 1.1, re-test what the change touches, check what the new build does to the data already entered, and release.',
+    goals: [
+      { id: 'impact', text: 'Impact assessment: at least 4 of 5 answers right', hint: 'Open the Amendment page; every answer is in the amendment text.', weight: 15, met: (p) => impactScore(p).right >= 4 },
+      { id: 'w6', text: 'Week 6 exists with window 40 to 44, SV and LB, before Week 8', hint: 'Schedule: add W6 (target day 42); the order follows the target day.', weight: 10, met: (p) => { const v = p.build.visits.find((x) => x.id === 'W6'); const i = p.build.visits.findIndex((x) => x.id === 'W6'); return !!v && v.lo === 40 && v.hi === 44 && v.forms.includes('SV') && v.forms.includes('LB') && i < p.build.visits.findIndex((x) => x.id === 'W8') } },
+      { id: 'wincheck', text: 'The visit-window check runs at Week 6', hint: 'SV-04 lists the visits it runs at.', weight: 5, met: (p) => !review(p).all.some((f) => f.id === 'P-wincheck-W6') },
+      { id: 'mg', text: 'Magnesium (MG, number, mmol/L) is on LB, and LB is at SCR, W4, W6 and W12', hint: 'Forms: add a field to LB.', weight: 10, met: (p) => { const f = p.build.forms.LB?.fields.find((x) => x.id === 'MG'); return !!f && f.type === 'number' && /mmol/i.test(f.unit ?? '') && ['SCR', 'W4', 'W6', 'W12'].every((v) => has(p, v, 'LB')) } },
+      { id: 'k', text: `Potassium: 5.0 mmol/L from ${AMENDMENT_EFFECTIVE}, 5.5 before (re-tested with hidden cases)`, hint: "Use the result date: days('2026-09-15', LBDAT) >= 0 means on or after the effective date.", weight: 15, met: potassiumRuleOk },
+      { id: 'mgmiss', text: 'Missing magnesium is queried only for results from the effective date', hint: 'A conditional missing-value check on LB.MG.', weight: 10, met: magnesiumRuleOk },
+      { id: 'history', text: 'No new site queries on data entered before the amendment', hint: 'The Amendment page shows what your build does to the data already entered.', weight: 10, met: (p) => historicImpact(p).newQueries.length === 0 },
+      { id: 'uat', text: 'Regression UAT signed by an independent tester (scripts re-executed where the change touched them, S7 passed)', hint: 'UAT: scripts S1, S3 and S7 need running; the others keep their 1.0 results.', weight: 15, met: (p) => uatSigned(p) && scriptState(p).done },
+      { id: 'rel', text: 'Version 1.1 or later released', hint: 'Release as the lead data manager.', weight: 10, met: (p) => released(p) && Number(p.build.study.buildVersion) > 1 },
+    ],
+  },
+  {
+    id: 'M5', title: 'Review the build generated from the digital protocol', start: 'usdm',
+    brief: 'A generator drafted the build from the protocol held as USDM data. Read its automation report, find what it got wrong or left out, fix the build, program the checks it could not generate, pass UAT and release. The console must import the file.',
+    goals: [
+      { id: 'scr', text: 'The Screening window is days -28 to -1', hint: 'The generator read a "Before" timing as "After".', weight: 10, met: (p) => { const v = p.build.visits.find((x) => x.id === 'SCR'); return !!v && v.lo === -28 && v.hi === -1 } },
+      { id: 'preg', text: 'The generic pregnancy form is replaced by the CDASH PREG form', hint: 'Remove F11 and add PREG from the library at SCR, D1 and W12.', weight: 10, met: (p) => !!p.build.forms.PREG && !p.build.forms.F11 && ['SCR', 'D1', 'W12'].every((v) => has(p, v, 'PREG')) },
+      { id: 'log', text: 'AE and CM are log forms, not visit forms', hint: 'Forms or Schedule: make them log forms.', weight: 10, met: (p) => ['AE', 'CM'].every((f) => p.logForms.includes(f) && !p.build.visits.some((v) => v.forms.includes(f))) },
+      { id: 'ops', text: 'An unscheduled visit and the deviations form exist', hint: 'The console needs UNS and DV; the protocol records deviations in the eCRF (11.10).', weight: 10, met: (p) => p.build.visits.some((v) => v.id === 'UNS') && !!p.build.forms.DV && p.logForms.includes('DV') },
+      { id: 'checks', text: 'Every check the protocol calls for is programmed', hint: 'Edit checks: the coverage table.', weight: 20, met: (p) => !review(p).all.some((f) => f.id.startsWith('K-N-')) },
+      { id: 'clean', text: 'No High findings, and the console will import the file', hint: 'Build review.', weight: 10, met: (p) => review(p).high === 0 },
+      { id: 'uat', text: 'UAT (test cases and scripts) signed by an independent tester', hint: 'Switch to the tester to run and sign UAT.', weight: 15, met: (p) => uatSigned(p) && scriptState(p).done },
+      { id: 'rel', text: 'The build is released', hint: 'Release as the lead data manager.', weight: 15, met: released },
+    ],
+  },
+
 ]
 
 export const missionOf = (p: LabProject) => MISSIONS.find((m) => m.id === p.mission?.id)
 
 export function startMission(id: string, level: Level): LabProject {
   const m = MISSIONS.find((x) => x.id === id)!
-  const p = createProject(m.start, { name: `Mission ${m.id}: ${m.title}` })
+  const name = `Mission ${m.id}: ${m.title}`
+  const p = m.start === 'amend' ? createAmendProject(name) : m.start === 'usdm' ? createFromUsdm(undefined, name) : createProject(m.start, { name })
   p.mission = { id, level, startedUtc: new Date().toISOString() }
   return p
 }
@@ -105,4 +154,20 @@ export function submitMission(p: LabProject) {
   p.mission!.detail = g.results.map((r) => `${r.ok ? 'Met' : 'Not met'}: ${r.text}`)
   p.history.push({ utc: p.mission!.endedUtc, what: `Mission ${g.mission.id} submitted: ${g.score}%` })
   return g
+}
+
+// ---------- certificate ----------
+// Five missions passed (80% or more, submitted). The verification code is cyrb53 of the basis,
+// as in the CDM console and the SDTM trainer, so the pharmolecule Passport can recompute it.
+export const CERT_NEEDED = MISSIONS.length
+export function bestRuns(projects: LabProject[]) {
+  return MISSIONS.map((m) => projects.filter((p) => p.mission?.id === m.id && p.mission.endedUtc && (p.mission.score ?? 0) >= 80).sort((a, b) => (b.mission!.score ?? 0) - (a.mission!.score ?? 0))[0]).map((p, i) => ({ id: MISSIONS[i].id, title: MISSIONS[i].title, p }))
+}
+export function certificate(projects: LabProject[], userId: string, name: string) {
+  const runs = bestRuns(projects)
+  const passed = runs.filter((r) => r.p)
+  const basis = `${name.trim().toLowerCase()}|${passed.map((r) => `${r.id}:${r.p!.mission!.score}:${r.p!.mission!.level}`).join(',')}|${userId}`
+  const h = hash(basis).slice(-10).toUpperCase()
+  const expert = passed.filter((r) => r.p!.mission!.level === 'expert').length
+  return { eligible: passed.length >= CERT_NEEDED, runs, basis, code: `EDC-${h.slice(0, 5)}-${h.slice(5)}`, distinction: passed.length >= CERT_NEEDED && expert >= 3 }
 }

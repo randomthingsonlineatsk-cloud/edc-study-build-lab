@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
-import type { LabProject } from './domain/lab'
+import { upgrade, type LabProject } from './domain/lab'
 import { listProjects, saveProject, deleteProject } from './domain/store'
 
 interface Store {
@@ -19,7 +19,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState('')
   const [saved, setSaved] = useState('')
   const timer = useRef<number | undefined>(undefined)
-  const refresh = useCallback(() => listProjects().then((all) => setProjects(all.sort((a, b) => b.updatedUtc.localeCompare(a.updatedUtc)))).catch(() => {}), [])
+  const refresh = useCallback(() => listProjects().then((all) => setProjects(all.map(upgrade).sort((a, b) => b.updatedUtc.localeCompare(a.updatedUtc)))).catch(() => {}), [])
   useEffect(() => { refresh().finally(() => setReady(true)) }, [refresh])
 
   const persist = useCallback(() => {
@@ -31,9 +31,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [refresh])
   const act = useCallback((fn: (p: LabProject) => void) => {
     if (!ref.current) return false
-    try { fn(ref.current); setError(''); return true } catch (e) { setError((e as Error).message); return false } finally { setTick((t) => t + 1); persist() }
+    // A refused action leaves the build exactly as it was (some checks run after the change).
+    const before = structuredClone(ref.current)
+    try { fn(ref.current); setError(''); return true } catch (e) { ref.current = before; setError((e as Error).message); return false } finally { setTick((t) => t + 1); persist() }
   }, [persist])
-  const open = useCallback((np: LabProject) => { ref.current = np; setTick((t) => t + 1); persist() }, [persist])
+  const open = useCallback((np: LabProject) => { ref.current = upgrade(np); setTick((t) => t + 1); persist() }, [persist])
   const close = useCallback(() => { ref.current = null; setTick((t) => t + 1); refresh() }, [refresh])
   const remove = useCallback(async (id: string) => { await deleteProject(id); if (ref.current?.id === id) ref.current = null; await refresh(); setTick((t) => t + 1) }, [refresh])
 

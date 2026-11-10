@@ -1,0 +1,1 @@
+CDISC ODM v2.0 XML schema, copied from https://github.com/cdisc-org/DataExchange-ODM (schema/, commit of 23 Aug 2023) under the MIT License (see LICENSE). Used only by the tests to validate the ODM export.

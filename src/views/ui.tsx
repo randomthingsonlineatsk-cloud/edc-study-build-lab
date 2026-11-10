@@ -112,9 +112,9 @@ export function Stat({ label, value, tone = 'grey' }: { label: string; value: Re
 export const ic = (extra: string) => cn(inputCls, extra)
 
 // A sign-off: name, role and the meaning of the signature, with an explicit confirmation.
-export function SignForm({ meaning, label = 'Sign', onSign, disabled }: { meaning: string; label?: string; onSign: (s: { name: string; role: string; meaning: string }) => void; disabled?: boolean }) {
-  const [name, setName] = useState('')
-  const [role, setRole] = useState('Lead data manager')
+export function SignForm({ meaning, label = 'Sign', onSign, disabled, who }: { meaning: string; label?: string; onSign: (s: { name: string; role: string; meaning: string }) => void; disabled?: boolean; who?: { name: string; role: string } }) {
+  const [name, setName] = useState(who?.name ?? '')
+  const [role, setRole] = useState(who?.role ?? 'Lead data manager')
   const [ok, setOk] = useState(false)
   return (
     <div className="rounded border border-lab-ema/50 bg-lab-ema-soft/30 p-3 space-y-2">

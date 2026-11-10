@@ -15,6 +15,11 @@ export default function Review() {
   const shown = r.all.filter((f) => !area || f.area === area).sort((a, b) => ['High', 'Medium', 'Low'].indexOf(a.sev) - ['High', 'Medium', 'Low'].indexOf(b.sev))
   return (
     <div className="space-y-4">
+      {p!.automation && (
+        <Panel title="Automation report: the first-pass build from the USDM protocol" sub="What the generator did and what it could not do. Automation drafts the build; a person still reads the protocol and owns every decision. The review below shows what is still wrong.">
+          <ul className="list-disc ml-5 text-xs text-lab-text space-y-1">{p!.automation.map((n) => <li key={n}>{n}</li>)}</ul>
+        </Panel>
+      )}
       <Panel title="Build review" sub="High findings block release: the build would not collect what the protocol needs, or the console would refuse the file. Medium findings need a fix or a reason. Low findings are improvements.">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <Stat label="High" value={r.high} tone={r.high ? 'red' : 'green'} /><Stat label="Medium" value={r.medium} tone={r.medium ? 'amber' : 'green'} /><Stat label="Low" value={r.low} /><Stat label="Review score" value={`${r.score}%`} tone={r.score >= 90 ? 'green' : 'amber'} />
