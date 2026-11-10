@@ -43,7 +43,9 @@ lead releases. Nobody who changed a build version can sign its UAT.
 
 Besides the test cases on each check, the UAT plan has seven test scripts. The tester enters test
 patients through the eCRF pages step by step and records whether the expected queries appear;
-deviations from the scripted data, failures and blocked steps become issues. A script result
+deviations from the scripted data, failures and blocked steps become issues. The tester can
+leave a script out of scope for a round, with a reason; the sign-off is then partial and cannot
+support a release. A script result
 stays valid until the forms, checks or visits it tests change, so after a change only the
 affected scripts are run again (regression testing scoped by impact).
 
@@ -71,7 +73,8 @@ earlier results for the medical monitor, and shows which scripts need re-testing
   three faulty edit checks.
 - **M2 Build the study from the protocol**: from an empty build to a release the console
   imports.
-- **M3 UAT: find the three faulty checks**, with test cases and scripts.
+- **M3 UAT: find the three faulty checks**, with test cases and scripts, ending in a partial UAT
+  sign-off (S5 and S6 out of scope, with reasons), which the lab will not release.
 - **M4 Protocol amendment after go-live**: impact assessment, build 1.1, regression UAT and
   release without new queries on old data.
 - **M5 Review the build generated from the digital protocol**.

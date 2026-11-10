@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../state'
-import { scriptsFor, stepState, executeStep, resetPatient, pageQueries, pageProblem, UAT_TODAY, type Script, type ScriptStep, type StepState } from '../domain/scripts'
+import { scriptsFor, stepState, executeStep, resetPatient, pageQueries, pageProblem, outOfScope, setOutOfScope, bringIntoScope, UAT_TODAY, type Script, type ScriptStep, type StepState } from '../domain/scripts'
 import type { Field } from '../domain/study'
 import { Btn, Panel, Pill, Table, TextArea } from './ui'
 
@@ -17,8 +17,8 @@ export default function Scripts() {
       <div className="flex flex-wrap gap-1">
         {list.map((x) => {
           const st = x.steps.map((y) => stepState(p!, x, y.id).state)
-          const done = st.every((y) => y === 'pass'), bad = st.some((y) => y === 'fail' || y === 'blocked')
-          return <Btn key={x.id} tone={x.id === sid ? 'solid' : done ? 'green' : bad ? 'red' : 'grey'} onClick={() => setSid(x.id)}>{x.id} {done ? '✓' : `${st.filter((y) => y === 'pass').length}/${st.length}`}</Btn>
+          const done = st.every((y) => y === 'pass'), bad = st.some((y) => y === 'fail' || y === 'blocked'), out = !!outOfScope(p!, x.id)
+          return <Btn key={x.id} tone={x.id === sid ? 'solid' : out ? 'grey' : done ? 'green' : bad ? 'red' : 'grey'} onClick={() => setSid(x.id)}>{x.id} {out ? 'out of scope' : done ? '✓' : `${st.filter((y) => y === 'pass').length}/${st.length}`}</Btn>
         })}
       </div>
       <ScriptView key={s.id} s={s} />
@@ -31,7 +31,17 @@ function ScriptView({ s }: { s: Script }) {
   const states = s.steps.map((x) => stepState(p!, s, x.id))
   const next = s.steps.findIndex((_, i) => states[i].state !== 'pass')
   const [cur, setCur] = useState(Math.max(0, next))
+  const [why, setWhy] = useState('')
+  const out = outOfScope(p!, s.id)
   const st = s.steps[cur]
+  if (out) return (
+    <div className="space-y-2">
+      <h3 className="font-mono text-xs text-lab-text">{s.id} {s.title} <Pill>out of scope</Pill></h3>
+      <p className="text-xs text-lab-text">Left out of this round by {out.by} on {out.utc.slice(0, 10)}: {out.reason}</p>
+      <p className="text-xs text-lab-text-muted">Its issues are set aside while it is out of scope. A sign-off with any script out of scope is a partial UAT and cannot support a release.</p>
+      <Btn tone="grey" onClick={() => act((x) => bringIntoScope(x, s.id))}>Bring back into scope</Btn>
+    </div>
+  )
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -47,6 +57,14 @@ function ScriptView({ s }: { s: Script }) {
         <Btn tone={i === cur ? 'solid' : 'grey'} onClick={() => setCur(i)}>Open</Btn>,
       ])} />
       {st && <StepPage key={`${s.id}-${st.id}`} s={s} st={st} onDone={() => setCur(Math.min(cur + 1, s.steps.length - 1))} />}
+      <details className="text-xs text-lab-text-muted">
+        <summary className="cursor-pointer text-lab-text">Out of scope for this round</summary>
+        <p className="mt-1">When a round of UAT tests only part of a build (the form a script needs is not built yet, say), the UAT plan says which scripts are out of scope and why. The sign-off is then partial: it records what was tested and cannot support a production release.</p>
+        <div className="flex flex-wrap gap-2 items-end mt-1">
+          <TextArea aria-label={`Reason ${s.id} is out of scope`} className="min-h-12 max-w-md" placeholder="Why this script is not tested in this round." value={why} onChange={(e) => setWhy(e.target.value)} />
+          <Btn tone="grey" disabled={why.trim().length < 10} onClick={() => { if (act((x) => setOutOfScope(x, s.id, why))) setWhy('') }}>Mark {s.id} out of scope</Btn>
+        </div>
+      </details>
     </div>
   )
 }

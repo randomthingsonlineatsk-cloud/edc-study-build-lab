@@ -35,7 +35,8 @@ const covered = (p: LabProject, ids: string[]) => {
   const f = review(p).all
   return ids.every((id) => !f.some((x) => x.id === id))
 }
-const uatSigned = (p: LabProject) => !!p.uat.signed && p.uat.buildHash === buildHash(p.build) && !buildersOf(p).some((b) => b.toLowerCase() === p.uat.signed!.name.toLowerCase())
+const signedIndependently = (p: LabProject) => !!p.uat.signed && p.uat.buildHash === buildHash(p.build) && !buildersOf(p).some((b) => b.toLowerCase() === p.uat.signed!.name.toLowerCase())
+const uatSigned = (p: LabProject) => signedIndependently(p) && !p.uat.signed!.partial?.length
 const released = (p: LabProject) => p.releases.length > 0 && p.releases.at(-1)!.hash === buildHash(p.build)
 const noHigh = (p: LabProject) => review(p).high === 0
 const noMedium = (p: LabProject) => review(p).medium === 0
@@ -88,11 +89,12 @@ export const MISSIONS: Mission[] = [
   },
   {
     id: 'M3', title: 'UAT: find the three faulty checks', start: 'draft',
-    brief: 'A short mission on testing. The draft has three edit checks that do not match their specification. As the tester, run the test cases and the scripts S2, S3 and S4; raise the failures; as the builder, correct the logic (not the expected result); then re-test until they pass. Scripts for parts the draft lacks (S5, S6) are blocked: that is expected here.',
+    brief: 'A targeted round of testing on the draft. Three edit checks do not match their specification. As the tester, run the test cases and the scripts; raise the failures; as the builder, correct the logic (not the expected result); re-test until they pass. The draft has no pregnancy form and cannot record EX04 yet, so this round leaves scripts S5 and S6 out of scope, with the reason, and ends in a partial UAT sign-off. Fixing the window and the ECG visit makes S1 pass too.',
     goals: [
-      ...BUG_GOALS.map((g) => ({ ...g, weight: 20 })),
-      { id: 'scripts', text: 'Scripts S2, S3 and S4 executed and passed on the corrected build', hint: 'UAT: scripted testing. Each script enters a test patient through the eCRF.', weight: 25, met: (p) => ['S2', 'S3', 'S4'].every((id) => scriptState(p).rows.find((r) => r.id === id)?.done) },
+      ...BUG_GOALS.map((g) => ({ ...g, weight: 15 })),
+      { id: 'scripts', text: 'Scripts S2, S3 and S4 executed and passed on the corrected build', hint: 'UAT: scripted testing. Each script enters a test patient through the eCRF.', weight: 20, met: (p) => ['S2', 'S3', 'S4'].every((id) => scriptState(p).rows.find((r) => r.id === id)?.done && !scriptState(p).rows.find((r) => r.id === id)?.out) },
       { id: 'runs', text: 'All check test cases pass, and no issue on a faulty check was merely accepted', hint: 'Run UAT again after the fixes, as the tester.', weight: 15, met: (p) => { const u = uatState(p); return u.runs > 0 && u.failed === 0 && !u.stale && !p.uat.issues.some((i) => i.status === 'accepted' && !i.checkId.includes('.')) } },
+      { id: 'partial', text: 'A partial UAT is signed by an independent tester with only S5 and S6 out of scope, each with a reason', hint: 'In each blocked script choose "Out of scope for this round", name S5 and S6 in the summary, then sign.', weight: 20, met: (p) => signedIndependently(p) && (p.uat.signed!.partial ?? []).join(',') === 'S5,S6' },
     ],
   },
   {

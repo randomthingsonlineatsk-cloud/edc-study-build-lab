@@ -31,12 +31,15 @@ export interface StudyBuild {
   ccg: { general: string[]; forms: Record<string, string[]>; fields?: Record<string, string> }
 }
 
-export interface Signature { name: string; role: string; meaning: string; utc: string }
+export interface Signature { name: string; role: string; meaning: string; utc: string; partial?: string[] }
 export interface UatStep { checkId: string; test: string; expected: boolean; actual: boolean | 'error'; utc: string; by: string }
 export interface UatIssue { id: string; checkId: string; text: string; status: 'open' | 'fixed' | 'accepted'; resolution?: string; utc: string }
 export interface ScriptResult { scriptId: string; stepId: string; status: 'pass' | 'fail' | 'blocked' | 'deviation'; detail: string; comment?: string; by: string; utc: string; buildHash: string }
 export interface CasebookEntry { visit: string; form: string; inst: number; values: Record<string, string> }
-export interface Uat { runs: UatStep[]; issues: UatIssue[]; summary?: string; signed?: Signature; buildHash?: string; scripts?: ScriptResult[]; patients?: Record<string, CasebookEntry[]>; runBy?: string; runHash?: string }
+export interface Uat { runs: UatStep[]; issues: UatIssue[]; summary?: string; signed?: Signature; buildHash?: string; scripts?: ScriptResult[]; patients?: Record<string, CasebookEntry[]>; runBy?: string; runHash?: string; outOfScope?: OutOfScope[] }
+// A script the UAT plan leaves out of this round of testing, with the reason. A sign-off with any
+// script out of scope is a partial UAT: it records what was tested but cannot support a release.
+export interface OutOfScope { scriptId: string; reason: string; by: string; utc: string }
 export interface Release { version: string; utc: string; hash: string; signed: Signature; notes: string }
 
 export type StartKind = 'blank' | 'library' | 'draft' | 'usdm' | 'amend'
@@ -340,7 +343,8 @@ export function uatState(p: LabProject) {
   const tested = new Set(runs.map((r) => r.checkId))
   const untested = p.build.checks.filter((c) => c.active && !tested.has(c.id)).map((c) => c.id)
   const fewTests = p.build.checks.filter((c) => c.active && (c.tests.length < 2 || !c.tests.some((t) => t.fire) || !c.tests.some((t) => !t.fire))).map((c) => c.id)
-  const open = p.uat.issues.filter((i) => i.status === 'open')
+  const out = new Set((p.uat.outOfScope ?? []).map((o) => o.scriptId))
+  const open = p.uat.issues.filter((i) => i.status === 'open' && !out.has(i.checkId.split('.')[0]))
   const stale = !!runs.length && !!p.uat.runHash && p.uat.runHash !== buildHash(p.build)
   const sc = scriptState(p)
   return { runs: runs.length, failed: failed.length, untested, fewTests, open: open.length, stale, scripts: sc,
@@ -359,8 +363,10 @@ export function signUat(p: LabProject, s: Omit<Signature, 'utc'>) {
   const st = uatState(p)
   if (!st.ready) throw new Error('UAT is not complete: run every test, execute every test script, fix or accept every issue, and give every check a firing and a passing test case.')
   if (!p.uat.summary?.trim()) throw new Error('Write the UAT summary first.')
-  p.uat.signed = { ...s, utc: now() }; p.uat.buildHash = buildHash(p.build)
-  log(p, `UAT signed by ${s.name} (${s.role})`)
+  const partial = (p.uat.outOfScope ?? []).map((o) => o.scriptId).sort()
+  if (partial.length && !partial.every((id) => p.uat.summary!.includes(id))) throw new Error(`This is a partial UAT: name each script left out of scope (${partial.join(', ')}) and why in the summary.`)
+  p.uat.signed = { ...s, ...(partial.length ? { partial, meaning: `${s.meaning} Partial UAT: ${partial.join(', ')} out of scope for this round.` } : {}), utc: now() }; p.uat.buildHash = buildHash(p.build)
+  log(p, `${partial.length ? 'Partial ' : ''}UAT signed by ${s.name} (${s.role})`)
 }
 
 // ---------- release ----------
@@ -381,6 +387,7 @@ export function release(p: LabProject, version: string, notes: string, s: Omit<S
   needRole(p, 'lead', 'Releasing a build')
   if (s.name.trim().toLowerCase() !== me(p).name.toLowerCase()) throw new Error(`Sign with your own name (${me(p).name}).`)
   if (!p.uat.signed || p.uat.buildHash !== buildHash(p.build)) throw new Error('Release needs a UAT sign-off on this exact build.')
+  if (p.uat.signed.partial?.length) throw new Error(`The UAT sign-off is partial (${p.uat.signed.partial.join(', ')} out of scope). A production release needs every script in scope and passed.`)
   if (!/^\d+\.\d+$/.test(version)) throw new Error('A build version looks like 1.0 or 1.1.')
   if (p.releases.some((r) => r.version === version)) throw new Error(`Version ${version} was already released.`)
   const last = p.releases.at(-1)

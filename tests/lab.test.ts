@@ -3,7 +3,7 @@ import { createProject, referenceBuild, runUat, uatState, signUat, release, expo
 import { review } from '../src/domain/review'
 import { annotatedCrf, dvsCsv, ccgHtml, uatReport } from '../src/domain/docs'
 import { startMission, grade, submitMission, bugFixed, certificate, potassiumRuleOk, magnesiumRuleOk } from '../src/domain/missions'
-import { SCRIPTS, scriptsFor, executeStep, scriptState, stepState } from '../src/domain/scripts'
+import { SCRIPTS, scriptsFor, executeStep, scriptState, stepState, setOutOfScope, bringIntoScope } from '../src/domain/scripts'
 import { createAmendProject, historicImpact, IMPACT_QS } from '../src/domain/amendment'
 import { usdmOf, generateBuild, createFromUsdm } from '../src/domain/usdm'
 import { odmXml } from '../src/domain/odm'
@@ -213,6 +213,31 @@ describe('missions and certificate', () => {
     expect(bugFixed(p, 'VS-09')).toBe(false)
     setCheck(p, 'VS-09', { expr: 'DIABP >= SYSBP' })
     expect(bugFixed(p, 'VS-09')).toBe(true)
+  })
+  test('M3 ends in a partial UAT that cannot be released', () => {
+    const p = startMission('M3', 'standard')
+    as(p, 'builder')
+    setCheck(p, 'VS-09', { expr: 'DIABP >= SYSBP' })
+    setCheck(p, 'LB-07', { expr: "GLUCU = 'mmol/L' and (GLUC < 2.0 or GLUC > 30)" })
+    setCheck(p, 'AE-11', { expr: 'present(AESTDAT) and present(consent()) and days(consent(), AESTDAT) < 0' })
+    setVisit(p, 'W8', { lo: 50, hi: 64 })
+    as(p, 'tester'); runUat(p)
+    for (const s of scriptsFor(p)) for (const st of s.steps) executeStep(p, s.id, st.id, st.values)
+    expect(uatState(p).ready).toBe(false) // S5 and S6 blocked
+    expect(() => setOutOfScope(p, 'S5', 'short')).toThrow(/why/)
+    setOutOfScope(p, 'S5', 'The PREG form is not in this draft build yet.')
+    setOutOfScope(p, 'S6', 'EX04 cannot be recorded in this draft build yet.')
+    expect(uatState(p).ready).toBe(true)
+    p.uat.summary = 'Targeted round: the three faulty checks fixed and re-tested.'
+    expect(() => signUat(p, sig(p))).toThrow(/S5, S6/)
+    p.uat.summary += ' S5 and S6 out of scope: their forms are not built yet.'
+    signUat(p, sig(p))
+    expect(p.uat.signed!.partial).toEqual(['S5', 'S6'])
+    const g = grade(p)!
+    expect(g.results.filter((r) => !r.ok).map((r) => r.id)).toEqual([])
+    as(p, 'lead'); expect(() => release(p, '1.0', 'x', sig(p))).toThrow(/partial/)
+    as(p, 'tester'); bringIntoScope(p, 'S5')
+    expect(p.uat.signed).toBeUndefined()
   })
   test('M2 and M5 score 100 with the reference build, released', () => {
     for (const id of ['M2', 'M5']) { const p = withRef(startMission(id, 'standard')); finish(p); expect(grade(p)!.score).toBe(100) }

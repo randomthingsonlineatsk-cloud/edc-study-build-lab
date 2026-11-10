@@ -181,10 +181,28 @@ export function stepState(p: LabProject, s: Script, stepId: string): { state: St
   if (r.buildHash !== scopeHash(p.build, s)) return { state: 'retest', result: r }
   return { state: r.status, result: r }
 }
+export const outOfScope = (p: LabProject, id: string) => (p.uat.outOfScope ?? []).find((o) => o.scriptId === id)
 export function scriptState(p: LabProject) {
   const rows = scriptsFor(p).map((s) => {
     const states = s.steps.map((x) => stepState(p, s, x.id).state)
-    return { id: s.id, title: s.title, steps: states.length, passed: states.filter((x) => x === 'pass').length, retest: states.filter((x) => x === 'retest').length, failed: states.filter((x) => x === 'fail' || x === 'blocked').length, done: states.every((x) => x === 'pass') }
+    return { id: s.id, title: s.title, steps: states.length, passed: states.filter((x) => x === 'pass').length, retest: states.filter((x) => x === 'retest').length, failed: states.filter((x) => x === 'fail' || x === 'blocked').length, done: states.every((x) => x === 'pass'), out: outOfScope(p, s.id) }
   })
-  return { rows, done: rows.every((r) => r.done), passedSteps: rows.reduce((a, r) => a + r.passed, 0), totalSteps: rows.reduce((a, r) => a + r.steps, 0) }
+  const inScope = rows.filter((r) => !r.out)
+  return { rows, done: inScope.length > 0 && inScope.every((r) => r.done), partial: rows.length - inScope.length, passedSteps: inScope.reduce((a, r) => a + r.passed, 0), totalSteps: inScope.reduce((a, r) => a + r.steps, 0) }
+}
+
+// The tester takes a script out of this round's scope (with the reason), or back in.
+export function setOutOfScope(p: LabProject, id: string, reason: string) {
+  needRole(p, 'tester', 'Setting the UAT scope')
+  if (!SCRIPTS.some((s) => s.id === id)) throw new Error(`No script ${id}.`)
+  if (reason.trim().length < 10) throw new Error('Say why the script is out of scope (for example: the form it tests is not in this build yet).')
+  p.uat.outOfScope = [...(p.uat.outOfScope ?? []).filter((o) => o.scriptId !== id), { scriptId: id, reason: reason.trim(), by: me(p).name, utc: new Date().toISOString() }]
+  if (p.uat.signed) { p.uat.signed = undefined; p.uat.buildHash = undefined }
+  log(p, `Script ${id} out of scope for this round: ${reason.trim()}`)
+}
+export function bringIntoScope(p: LabProject, id: string) {
+  needRole(p, 'tester', 'Setting the UAT scope')
+  p.uat.outOfScope = (p.uat.outOfScope ?? []).filter((o) => o.scriptId !== id)
+  if (p.uat.signed) { p.uat.signed = undefined; p.uat.buildHash = undefined }
+  log(p, `Script ${id} back in scope`)
 }

@@ -47,8 +47,9 @@ export default function Uat() {
       <Panel title="UAT summary and sign-off">
         <TextArea aria-label="UAT summary" placeholder="What was tested, by whom, the issues found and how each was resolved, and whether the build is fit for release." value={p!.uat.summary ?? ''} onChange={(e) => act((x) => { x.uat.summary = e.target.value })} />
         {p!.uat.signed && p!.uat.buildHash === buildHash(p!.build)
-          ? <p className="text-sm text-lab-cdsco">Signed by {p!.uat.signed.name} ({p!.uat.signed.role}), {fmtUtc(p!.uat.signed.utc)} UTC: {p!.uat.signed.meaning}</p>
+          ? <p className={`text-sm ${p!.uat.signed.partial?.length ? 'text-lab-amber' : 'text-lab-cdsco'}`}>Signed by {p!.uat.signed.name} ({p!.uat.signed.role}), {fmtUtc(p!.uat.signed.utc)} UTC: {p!.uat.signed.meaning}{p!.uat.signed.partial?.length ? ' This partial sign-off cannot support a release.' : ''}</p>
           : <SignForm key={me(p!).name} who={{ name: me(p!).name, role: ROLE_LABEL[me(p!).role] }} meaning="I approve the UAT results: the edit checks of this build work as specified." label="Sign UAT" disabled={!u.ready || me(p!).role !== 'tester'} onSign={(s) => act((x) => signUat(x, s))} />}
+        {u.scripts.partial > 0 && !p!.uat.signed && <p className="text-xs text-lab-amber">Partial UAT: {u.scripts.rows.filter((r) => r.out).map((r) => r.id).join(', ')} out of scope. Name each in the summary with the reason; the sign-off will be partial and cannot support a release.</p>}
         {!u.ready && <p className="text-xs text-lab-text-muted">Sign-off opens when every active check has been run on this build with both test types, every script step has passed, no test fails and no issue is open.</p>}
         {me(p!).role !== 'tester' && <p className="text-xs text-lab-text-muted">Only the UAT tester signs. {buildersOf(p!).length ? `Changed this build version, so cannot sign: ${buildersOf(p!).join(', ')}.` : ''}</p>}
         <Btn tone="grey" disabled={!u.runs} onClick={() => download(`${p!.build.study.protocol}-uat-report.html`, uatReport(p!), 'text/html')}>Download the UAT report (HTML)</Btn>
