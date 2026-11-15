@@ -11,7 +11,7 @@
 import { FORMS as REF_FORMS, VISITS as REF_VISITS, CODELISTS as REF_CODELISTS, LOG_FORMS as REF_LOG, type FormDef, type Visit, type Field } from './study'
 import { SHIPPED_CHECKS, CTX_FNS, CHECK_BUGS } from './checks'
 import { CCG_GENERAL, CCG_FORM, CCG_FIELD } from './dmp'
-import { M11, protocolOf } from './m11'
+import { M11, protocolOf, type ProtocolDef } from './m11'
 import type { Check, CheckTest } from './types'
 import { validate } from './expr'
 import { runTest } from './engine'
@@ -19,6 +19,8 @@ import { scriptState } from './scripts'
 
 export const BUILD_FORMAT = 'cdm-study-build'
 export const PROTOCOL_ID = 'HLV-204-201'
+// The protocol a project builds: HLV-204-201, or one imported from a USDM file.
+export const protocolIdOf = (p: { imported?: { id?: string } }) => p.imported?.id ?? PROTOCOL_ID
 
 export interface Codelist { value: string; label: string }
 export interface StudyBuild {
@@ -55,6 +57,7 @@ export interface LabProject {
   schema: 1; id: string; name: string; userId: string; classId: string
   createdUtc: string; updatedUtc: string
   start: StartKind
+  imported?: ProtocolDef      // the protocol, when the project was generated from another protocol's USDM file
   build: StudyBuild
   logForms: string[]          // subject-level repeating forms, collected at any time
   uat: Uat
@@ -404,7 +407,7 @@ export function importBuild(p: LabProject, text: string): string[] {
   let b: StudyBuild
   try { b = JSON.parse(text) } catch { throw new Error('The file is not valid JSON.') }
   if (b?.format !== BUILD_FORMAT || b.version !== 1) throw new Error(`This is not a ${BUILD_FORMAT} version 1 file.`)
-  if (b.study?.protocol !== PROTOCOL_ID) throw new Error(`The build is for ${b.study?.protocol}; this lab builds ${PROTOCOL_ID}.`)
+  if (b.study?.protocol !== protocolIdOf(p)) throw new Error(`The build is for ${b.study?.protocol}; this project builds ${protocolIdOf(p)}.`)
   p.build = b
   p.logForms = Object.values(b.forms).filter((f) => f.repeating && !b.visits.some((v) => v.forms.includes(f.id))).map((f) => f.id)
   touched(p, `Build ${b.study.buildVersion} imported from ${b.study.source}`)

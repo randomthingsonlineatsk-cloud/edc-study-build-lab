@@ -64,18 +64,67 @@ export function usdmOf(pr: ProtocolDef = protocolOf({})) {
 export type Usdm = ReturnType<typeof usdmOf>
 
 // ---------- the automated first-pass build ----------
+// The generator maps each activity's biomedical concept to a CDASH form in its library by the
+// concept's name; a concept it does not know becomes a generic form made from the concept's
+// properties. For HLV-204-201 it keeps its historic mapping by procedure (with the pregnancy test
+// deliberately unmapped). Any protocol can be built: a USDM v4 file written in the Protocol
+// Builder, for example, drafts a build for that protocol, and the project keeps the protocol so
+// the build review checks against it.
+const CONCEPT_FORM: Record<string, string> = {
+  'Informed Consent Obtained': 'IC', Demographics: 'DM', 'Eligibility Criteria Not Met': 'IE', 'Medical History': 'MH', 'Vital Signs (Blood Pressure, Pulse)': 'VS',
+  'Body Weight': 'VS', 'Body Height': 'VS', 'Local Safety Laboratory Panel': 'LB', 'Central Laboratory Sample': 'LBC', '12-Lead ECG': 'EG',
+  'Study Drug Dispensing and Accountability': 'EX', 'Adverse Event': 'AE', 'Concomitant Medication': 'CM', Disposition: 'EOS',
+}
+const CONTINUOUS = new Set(['AE', 'CM'])
 const days = (d: string) => Number(/^P(\d+)D$/.exec(d)?.[1] ?? NaN)
-export function generateBuild(u: Usdm): { build: StudyBuild; notes: string[]; logForms: string[] } {
-  const v = u.study?.versions?.[0], d = v?.studyDesigns?.[0], tl = d?.scheduleTimelines?.find((t) => t.mainTimeline) ?? d?.scheduleTimelines?.[0]
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyUsdm = any
+const formFor = (isHlv: boolean, pid: string, concept?: string) => (isHlv ? BC[pid]?.form ?? '' : CONCEPT_FORM[concept ?? ''] ?? '')
+
+// The protocol as the USDM file states it (read correctly, unlike the generator below).
+export function protocolFromUsdm(u: AnyUsdm): ProtocolDef {
+  const v = u.study.versions[0], d = v.studyDesigns[0], tl = d.scheduleTimelines.find((t: AnyUsdm) => t.mainTimeline) ?? d.scheduleTimelines[0]
+  const anchorDay = 1
+  const visits = d.encounters.map((e: AnyUsdm) => {
+    const si = tl.instances.find((x: AnyUsdm) => x.encounterId === e.id), t = tl.timings.find((x: AnyUsdm) => x.relativeFromScheduledInstanceId === si?.id)
+    const kind = t?.type?.decode, n = t ? days(t.value) : 0
+    const day = !t || kind === 'Fixed Reference' ? anchorDay : kind === 'Before' ? anchorDay - n - 1 : anchorDay + n
+    return { id: e.name, name: e.label || e.name, lo: day - (t ? days(t.windowLower) : 0), hi: day + (t ? days(t.windowUpper) : 0) }
+  })
+  const procedures = d.activities.map((a: AnyUsdm) => {
+    const pid = String(a.id).replace('Activity_', ''), bc = v.biomedicalConcepts.find((x: AnyUsdm) => x.id === a.biomedicalConceptIds?.[0])
+    const form = formFor(false, pid, bc?.name) || `F${pid.replace(/^P/, '')}`
+    const at = tl.instances.filter((x: AnyUsdm) => x.activityIds.includes(a.id)).map((x: AnyUsdm) => d.encounters.find((e: AnyUsdm) => e.id === x.encounterId)?.name).filter(Boolean)
+    return { id: pid, name: a.name, section: String(a.description ?? '').replace(/^Protocol section /, ''), form, fields: (bc?.properties ?? []).map((x: AnyUsdm) => x.name), visits: CONTINUOUS.has(form) ? 'continuous' as const : at, note: a.notes?.[0]?.text }
+  })
+  const crit = d.eligibilityCriteria.map((c: AnyUsdm) => ({ code: c.identifier, text: v.eligibilityCriterionItems.find((i: AnyUsdm) => i.id === c.criterionItemId)?.text ?? '', cat: c.category?.decode ?? '' }))
+  const titlePage: Record<string, string> = { 'Full Title': v.titles?.[0]?.text ?? '', 'Sponsor Protocol Identifier': v.studyIdentifiers?.[0]?.text ?? '' }
+  const acr = v.titles?.find((t: AnyUsdm) => /Acronym/.test(t.type?.decode ?? ''))?.text; if (acr) titlePage['Trial Acronym'] = acr
+  if (d.studyPhase?.standardCode?.decode) titlePage['Trial Phase'] = d.studyPhase.standardCode.decode
+  if (d.blindingSchema?.standardCode?.decode) titlePage['Trial Blind Schema'] = d.blindingSchema.standardCode.decode
+  if (v.organizations?.[0]?.name) titlePage['Sponsor'] = v.organizations[0].name
+  return {
+    id: titlePage['Sponsor Protocol Identifier'], version: v.versionIdentifier ?? '1', visits, procedures,
+    inclusion: crit.filter((c: AnyUsdm) => /Inclusion/i.test(c.cat) || /^IN/.test(c.code)).map(({ code, text }: AnyUsdm) => ({ code, text })),
+    exclusion: crit.filter((c: AnyUsdm) => !(/Inclusion/i.test(c.cat) || /^IN/.test(c.code))).map(({ code, text }: AnyUsdm) => ({ code, text })),
+    statements: [], kThreshold: NaN, titlePage,
+    objectives: (d.objectives ?? []).flatMap((o: AnyUsdm, i: number) => (o.endpoints ?? []).map((e: AnyUsdm) => ({ section: `3.${/Primary/.test(o.level?.decode) ? 1 : 2}.${i + 1}`, kind: /Primary/.test(e.level?.decode) ? 'Primary' : 'Secondary', endpoint: e.text }))),
+  }
+}
+
+export function generateBuild(u: Usdm | AnyUsdm): { build: StudyBuild; notes: string[]; logForms: string[]; def?: ProtocolDef } {
+  const v = u.study?.versions?.[0], d = v?.studyDesigns?.[0], tl = d?.scheduleTimelines?.find((t: AnyUsdm) => t.mainTimeline) ?? d?.scheduleTimelines?.[0]
   if (!v || !d || !tl) throw new Error('The file has no study version, study design or schedule timeline.')
   const id = v.studyIdentifiers?.[0]?.text
-  if (id !== PROTOCOL_ID) throw new Error(`The protocol is ${id ?? '(none)'}; this lab builds ${PROTOCOL_ID}.`)
+  if (!id) throw new Error('The file has no study identifier.')
+  const isHlv = id === PROTOCOL_ID
   const notes: string[] = []
-  const b: StudyBuild = { format: BUILD_FORMAT, version: 1, study: { protocol: PROTOCOL_ID, title: v.titles?.[0]?.text ?? '', buildVersion: '0.1', source: 'EDC Study Build Lab (generated from USDM)' }, visits: [], forms: {}, codelists: { NY: structuredClone(LIBRARY_CODELISTS.NY) }, checks: [], ccg: { general: [...CCG_GENERAL], forms: {}, fields: {} } }
+  if (!isHlv) notes.push(`Protocol ${id}: forms are mapped from each activity's biomedical concept; the build review checks the build against this protocol.`)
+  const b: StudyBuild = { format: BUILD_FORMAT, version: 1, study: { protocol: id, title: v.titles?.[0]?.text ?? '', buildVersion: '0.1', source: 'EDC Study Build Lab (generated from USDM)' }, visits: [], forms: {}, codelists: { NY: structuredClone(LIBRARY_CODELISTS.NY) }, checks: [], ccg: { general: [...CCG_GENERAL], forms: {}, fields: {} } }
   // Visits: one per encounter; the window from the timing relative to Day 1.
   for (const e of d.encounters) {
-    const si = tl.instances.find((x) => x.encounterId === e.id)
-    const t = tl.timings.find((x) => x.relativeFromScheduledInstanceId === si?.id)
+    const si = tl.instances.find((x: AnyUsdm) => x.encounterId === e.id)
+    const t = tl.timings.find((x: AnyUsdm) => x.relativeFromScheduledInstanceId === si?.id)
     // The generator reads every timing value as days after the anchor (it does not check the
     // timing type), which is what goes wrong for a visit timed "Before" Day 1.
     const nominal = t ? 1 + days(t.value) : 1
@@ -88,39 +137,41 @@ export function generateBuild(u: Usdm): { build: StudyBuild; notes: string[]; lo
   const unmapped: string[] = []
   for (const a of d.activities) {
     const bcId = a.biomedicalConceptIds?.[0]
-    const bc = v.biomedicalConcepts.find((x) => x.id === bcId)
-    const pid = a.id.replace('Activity_', '')
-    let fid = BC[pid]?.form ?? ''
+    const bc = v.biomedicalConcepts.find((x: AnyUsdm) => x.id === bcId)
+    const pid = String(a.id).replace('Activity_', '')
+    let fid = formFor(isHlv, pid, bc?.name)
     if (!fid) {
       // No form in the library for this concept: a generic form from the concept's properties.
-      fid = `F${pid.slice(1)}`
-      b.forms[fid] = { id: fid, name: bc?.name ?? a.name, domain: 'XX', fields: (bc?.properties ?? []).map((p) => ({ id: p.name, label: p.label, type: 'text' as const })) }
-      unmapped.push(`${a.name}: no CDASH form for the concept "${bc?.name}", so a generic form ${fid} was made with text fields (${(bc?.properties ?? []).map((p) => p.name).join(', ')}). Check the form, its domain, field types and codelists.`)
+      fid = `F${pid.replace(/^P/, '')}`
+      if (!b.forms[fid]) b.forms[fid] = { id: fid, name: bc?.name ?? a.name, domain: 'XX', fields: (bc?.properties ?? []).map((p: AnyUsdm) => ({ id: p.name, label: p.label, type: 'text' as const })) }
+      unmapped.push(`${a.name}: no CDASH form for the concept "${bc?.name}", so a generic form ${fid} was made with text fields (${(bc?.properties ?? []).map((p: AnyUsdm) => p.name).join(', ')}). Check the form, its domain, field types and codelists.`)
     } else lib(fid)
-    for (const si of tl.instances.filter((x) => x.activityIds.includes(a.id))) {
+    for (const si of tl.instances.filter((x: AnyUsdm) => x.activityIds.includes(a.id))) {
       const vis = b.visits.find((x) => `SAI_${x.id}` === si.id)
       if (vis && !vis.forms.includes(fid)) vis.forms.push(fid)
     }
     if (a.notes?.length) notes.push(`${a.name}: the note "${a.notes[0].text}" is free text; it was not turned into fields or completion guidelines.`)
   }
   notes.push(...unmapped)
-  notes.push('Adverse events and concomitant medications are scheduled at every visit from Day 1 in the timeline, so the generator placed the AE and CM forms on those visits rather than making them log forms.')
+  notes.push('Adverse events and concomitant medications are scheduled at every visit in the timeline, so the generator placed the AE and CM forms on those visits rather than making them log forms.')
   // Eligibility: the criteria list from the eligibility criteria.
-  const crit = d.eligibilityCriteria.map((c) => ({ value: c.identifier, label: `${c.identifier} ${v.eligibilityCriterionItems.find((i) => i.id === c.criterionItemId)?.text ?? ''}`.trim() }))
+  const crit = d.eligibilityCriteria.map((c: AnyUsdm) => ({ value: c.identifier, label: `${c.identifier} ${v.eligibilityCriterionItems.find((i: AnyUsdm) => i.id === c.criterionItemId)?.text ?? ''}`.trim() }))
   if (b.forms.IE) { const f = b.forms.IE.fields.find((x) => x.id === 'IETESTCD'); if (f) { f.codelist = 'IETEST'; b.codelists.IETEST = crit } }
   notes.push(`Built the IETEST codelist from the ${crit.length} eligibility criteria.`)
   // Checks: a missing-value check for every required field; nothing else is generated.
   const tmp: LabProject = createProject('blank'); tmp.build = b
+  if (!isHlv) tmp.imported = protocolFromUsdm(u)
   for (const f of Object.values(b.forms)) for (const fld of f.fields.filter((x) => x.required && !x.derived)) b.checks.push(missingCheck(tmp, f.id, fld.id))
   notes.push(`Generated ${b.checks.length} missing-value checks. Range, date, cross-form and protocol checks are not generated: program them from the protocol.`)
   notes.push('Not generated: an unscheduled visit (none in the schedule of activities), the protocol deviations form (section 11.10, not in the schedule), form-level completion guidelines.')
-  return { build: b, notes, logForms: [] }
+  return { build: b, notes, logForms: [], def: isHlv ? undefined : tmp.imported }
 }
 
-export function createFromUsdm(u: Usdm = usdmOf(), name = 'VASCLEAR-2 build (generated from the USDM protocol)'): LabProject {
+export function createFromUsdm(u: Usdm | AnyUsdm = usdmOf(), name = 'VASCLEAR-2 build (generated from the USDM protocol)'): LabProject {
   const p = createProject('blank', { name })
   const g = generateBuild(u)
   p.start = 'usdm'; p.build = g.build; p.logForms = g.logForms; p.automation = g.notes
-  p.history.push({ utc: new Date().toISOString(), what: 'First-pass build generated from the USDM protocol', by: 'Build generator', build: true })
+  if (g.def) p.imported = g.def
+  p.history.push({ utc: new Date().toISOString(), what: `First-pass build generated from the USDM protocol${g.def ? ` ${g.def.id}` : ''}`, by: 'Build generator', build: true })
   return p
 }

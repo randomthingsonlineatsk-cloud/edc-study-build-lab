@@ -47,7 +47,7 @@ export default function Release() {
           <p className="text-xs text-lab-text"><b>Standard exchange formats</b></p>
           <div className="flex flex-wrap gap-2">
             <Btn tone="grey" onClick={() => download(`${proto}-build-${p!.build.study.buildVersion}-odm.xml`, odmXml(p!), 'application/xml')}>Study build as CDISC ODM v2.0 (XML)</Btn>
-            <Btn tone="grey" onClick={() => download(`${proto}-protocol-${protocolOf(p!).version}-usdm.json`, JSON.stringify(usdmOf(protocolOf(p!)), null, 2))}>Protocol as USDM v4 data (JSON)</Btn>
+            {!p!.imported && <Btn tone="grey" onClick={() => download(`${proto}-protocol-${protocolOf(p!).version}-usdm.json`, JSON.stringify(usdmOf(protocolOf(p!)), null, 2))}>Protocol as USDM v4 data (JSON)</Btn>}
           </div>
           <p className="text-xs text-lab-text-muted">ODM is the vendor-neutral format EDC systems exchange study designs in: visits become StudyEventDefs, forms ItemGroupDefs, fields ItemDefs with CDASH and SDTM aliases, codelists CodeLists, show-if rules ConditionDefs, and each edit check a soft RangeCheck with its query text. The file validates against the CDISC ODM v2.0 schema; the check logic is in this lab's check language, named in each expression. The USDM file is the protocol itself as data (a teaching subset of USDM v4).</p>
         </div>

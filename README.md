@@ -64,7 +64,11 @@ earlier results for the medical monitor, and shows which scripts need re-testing
   ODM v2.0 schema (included under `tests/odm-v2.0-schema`, MIT License).
 - **CDISC USDM v4**: the protocol is available as USDM-shaped data (a teaching subset), and a
   generator drafts a first-pass build from it, with the misses automation typically makes. You
-  can also generate a build from an edited USDM file of this protocol.
+  can also generate a build from an edited USDM file of this protocol, or from the USDM v4 file of
+  any other protocol: a protocol written in the
+  [Protocol Builder](https://randomthingsonlineatsk-cloud.github.io/protocol-builder/) (for example
+  VERDANT-1, HRP-301) drafts a build for that protocol, and the build review then checks the build
+  against it.
 
 ## Missions
 

@@ -13,7 +13,7 @@ const STARTS: { id: StartKind; title: string; text: string }[] = [
   { id: 'library', title: 'Build from the protocol, with the form library', text: 'An empty build. Create the visits from the schedule of activities, add CDASH forms from the library, adjust fields and codelists, then program the edit checks.' },
   { id: 'blank', title: 'Build from the protocol, from scratch', text: 'An empty build without the library shortcut on the Forms page: design each form and field yourself.' },
   { id: 'draft', title: 'Review and fix the draft build', text: 'The build the CDM console runs today, version 0.1: it has gaps against the protocol and three programming errors in its edit checks. Find and fix them, run UAT and release version 1.0.' },
-  { id: 'usdm', title: 'Generate from the digital protocol (USDM)', text: 'The protocol held as CDISC USDM data drives an automated first-pass build. Read the automation report, find what the generator got wrong or left out, and finish the build.' },
+  { id: 'usdm', title: 'Generate from the digital protocol (USDM)', text: 'The protocol held as CDISC USDM data drives an automated first-pass build. Read the automation report, find what the generator got wrong or left out, and finish the build. A USDM file from the Protocol Builder (any protocol) works too.' },
   { id: 'amend', title: 'Amend a build in production', text: 'Build 1.0 is live with data entered. Amendment 3 adds a visit, a laboratory test and a new safety threshold: assess the impact, build 1.1, re-test what changed and release.' },
 ]
 const make = (k: StartKind): LabProject => (k === 'usdm' ? createFromUsdm() : k === 'amend' ? createAmendProject() : createProject(k))

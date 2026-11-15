@@ -1,3 +1,7 @@
+import HRP from './fixtures/HRP-301-usdm.json'
+import HRP_SUB from './fixtures/HRP-301-usdm-teaching-subset.json'
+import HLV from './fixtures/HLV-204-201-usdm.json'
+import NFR from './fixtures/NFR-118-201-usdm.json'
 import { describe, expect, test } from 'vitest'
 import { createProject, referenceBuild, runUat, uatState, signUat, release, exportBuild, importBuild, buildHash, setCheck, setVisit, addVisit, addField, addLibraryForm, removeForm, setLogForm, toggleFormAtVisit, visitsFromProtocol, me, upgrade, type LabProject, type Role } from '../src/domain/lab'
 import { review } from '../src/domain/review'
@@ -133,6 +137,49 @@ describe('documents and ODM', () => {
   })
 })
 
+const FIX: Record<string, unknown> = { 'HRP-301-usdm.json': HRP, 'HRP-301-usdm-teaching-subset.json': HRP_SUB, 'HLV-204-201-usdm.json': HLV, 'NFR-118-201-usdm.json': NFR }
+const fixture = (n: string) => structuredClone(FIX[n]) as any // eslint-disable-line @typescript-eslint/no-explicit-any
+describe('USDM from the Protocol Builder', () => {
+  test('VERDANT-1 (HRP-301): the export drafts a build for that protocol, reviewed against it', () => {
+    for (const file of ['HRP-301-usdm.json', 'HRP-301-usdm-teaching-subset.json']) {
+      const p = createFromUsdm(fixture(file), 'VERDANT-1 from the Protocol Builder')
+      expect(p.imported?.id).toBe('HRP-301')
+      expect(p.build.study.protocol).toBe('HRP-301')
+      expect(p.build.visits.map((v) => v.id)).toEqual(['SCR', 'D1', 'W2', 'W4', 'W8', 'W12', 'W16', 'FU'])
+      expect(Object.keys(p.build.forms)).toEqual(expect.arrayContaining(['SV', 'IC', 'DM', 'IE', 'MH', 'VS', 'LBC', 'EX', 'AE', 'CM', 'EOS', 'F06', 'F08', 'F09', 'F10', 'F11']))
+      expect(p.build.forms.F09.fields.map((f) => f.id)).toEqual(['HEADAT', 'ASSESSOR', 'IGACHE'])
+      expect(p.build.codelists.IETEST.map((c) => c.value)).toEqual(['IN01', 'IN02', 'IN03', 'IN04', 'EX01', 'EX02', 'EX03'])
+      // The protocol is read correctly; the generator's misses are found against it.
+      expect(protocolOf(p).visits.find((v) => v.id === 'SCR')).toMatchObject({ lo: -28, hi: -1 })
+      expect(protocolOf(p).procedures.find((x) => x.id === 'P13')!.visits).toBe('continuous')
+      const ids = review(p).all.map((f) => f.id)
+      expect(ids).toContain('P-window-SCR'); expect(ids).toContain('P-log-AE')
+      // Fixing them by hand clears them, and a build exported from the project imports again.
+      as(p, 'builder'); setVisit(p, 'SCR', { lo: -28, hi: -1, day: -14 }); setLogForm(p, 'AE', true); setLogForm(p, 'CM', true)
+      const after = review(p).all.map((f) => f.id)
+      expect(after).not.toContain('P-window-SCR'); expect(after).not.toContain('P-log-AE')
+      expect(() => importBuild(p, JSON.stringify(exportBuild(p)))).not.toThrow()
+      expect(() => importBuild(p, JSON.stringify(referenceBuild()))).toThrow(/this project builds HRP-301/)
+    }
+  })
+  test('VASCLEAR-2 written in the Protocol Builder gives the same draft as the lab’s own file', () => {
+    // The one difference is deliberate: the Protocol Builder's VASCLEAR-2 collects adverse events
+    // and medications from consent (its 9.2.1 and schedule agree), so they are scheduled at
+    // screening too; the lab's own file follows the original schedule footnote (from Day 1).
+    const a = generateBuild(fixture('HLV-204-201-usdm.json')).build, b = generateBuild(usdmOf()).build
+    const shape = (x: typeof a) => x.visits.map((v) => [v.id, v.lo, v.hi, v.forms.filter((f) => v.id !== 'SCR' || !['AE', 'CM'].includes(f)).sort()])
+    expect(shape(a)).toEqual(shape(b))
+    expect(a.visits[0].forms).toEqual(expect.arrayContaining(['AE', 'CM']))
+    expect(Object.keys(a.forms).sort()).toEqual(Object.keys(b.forms).sort())
+  })
+  test('NORTHFELL-2 (a protocol the lab has never seen) builds', () => {
+    const p = createFromUsdm(fixture('NFR-118-201-usdm.json'))
+    expect(p.imported?.id).toBe('NFR-118-201')
+    expect(p.build.forms.F05.name).toBe('Spirometry')
+    expect(review(p).all.length).toBeGreaterThan(0)
+  })
+})
+
 describe('USDM digital protocol', () => {
   test('the generated first-pass build has the typical automation misses', () => {
     const u = usdmOf()
@@ -146,7 +193,10 @@ describe('USDM digital protocol', () => {
     expect(g.build.visits.find((v) => v.id === 'W4')!.forms).toContain('AE')
     expect(g.build.visits.some((v) => v.id === 'UNS')).toBe(false)
     expect(g.notes.length).toBeGreaterThan(4)
-    expect(() => generateBuild({ ...u, study: { ...u.study, versions: [{ ...u.study.versions[0], studyIdentifiers: [{ ...u.study.versions[0].studyIdentifiers[0], text: 'X-1' }] }] } })).toThrow(/X-1/)
+    // Another protocol's file builds for that protocol.
+    const other = generateBuild({ ...u, study: { ...u.study, versions: [{ ...u.study.versions[0], studyIdentifiers: [{ ...u.study.versions[0].studyIdentifiers[0], text: 'X-1' }] }] } })
+    expect(other.build.study.protocol).toBe('X-1'); expect(other.def?.id).toBe('X-1')
+    expect(() => generateBuild({ study: { versions: [] } })).toThrow(/no study version/)
   })
   test('fixing the generated build by hand clears its findings', () => {
     const p = createFromUsdm()

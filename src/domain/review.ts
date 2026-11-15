@@ -117,10 +117,11 @@ export function neededChecks(p: LabProject): NeedCheck[] {
   out.push({ id: 'N-consent', ref: 'M11 11.3', text: 'A visit or procedure dated before informed consent', covered: by((c) => /consent\(\)/.test(c.expr)) })
   // Criteria the collected data can test (EX01 secondary hypertension and EX02 eGFR rest on medical
   // review and source documents: the eCRF holds no field that decides them).
-  for (const c of [...M11.inclusion, ...M11.exclusion].filter((x) => CHECKABLE.has(x.code))) out.push({ id: `N-${c.code}`, ref: c.code.startsWith('IN') ? 'M11 5.2' : 'M11 5.3', text: `Eligible, but ${c.code} is not met: ${c.text}`, covered: by((x) => `${x.expr} ${x.title} ${x.message}`.includes(c.code)) })
-  out.push({ id: 'N-sysbp', ref: 'M11 8.4.2', text: 'Systolic blood pressure outside a plausible range', covered: by((c) => c.form === 'VS' && c.category === 'range' && /SYSBP/.test(c.expr)) })
-  out.push({ id: 'N-diabp', ref: 'M11 8.4.2', text: 'Diastolic blood pressure outside a plausible range', covered: by((c) => c.form === 'VS' && c.category === 'range' && /DIABP/.test(c.expr)) })
-  if (M11.kThreshold === 5.5) out.push({ id: 'N-k', ref: 'M11 8.4.4, 12.1', text: 'Potassium above 5.5 mmol/L (safety follow-up)', covered: by((c) => c.form === 'LB' && /\bK\b/.test(c.expr) && /5\.5/.test(c.expr)) })
+  const hlv = !p.imported   // the HLV-204-201 checks below are that protocol's; an imported protocol gets the general ones
+  for (const c of [...M11.inclusion, ...M11.exclusion].filter((x) => hlv && CHECKABLE.has(x.code))) out.push({ id: `N-${c.code}`, ref: c.code.startsWith('IN') ? 'M11 5.2' : 'M11 5.3', text: `Eligible, but ${c.code} is not met: ${c.text}`, covered: by((x) => `${x.expr} ${x.title} ${x.message}`.includes(c.code)) })
+  if (hlv) out.push({ id: 'N-sysbp', ref: 'M11 8.4.2', text: 'Systolic blood pressure outside a plausible range', covered: by((c) => c.form === 'VS' && c.category === 'range' && /SYSBP/.test(c.expr)) })
+  if (hlv) out.push({ id: 'N-diabp', ref: 'M11 8.4.2', text: 'Diastolic blood pressure outside a plausible range', covered: by((c) => c.form === 'VS' && c.category === 'range' && /DIABP/.test(c.expr)) })
+  if (!hlv) { /* no potassium rule in an imported protocol */ } else if (M11.kThreshold === 5.5) out.push({ id: 'N-k', ref: 'M11 8.4.4, 12.1', text: 'Potassium above 5.5 mmol/L (safety follow-up)', covered: by((c) => c.form === 'LB' && /\bK\b/.test(c.expr) && /5\.5/.test(c.expr)) })
   else out.push({ id: 'N-k', ref: 'Amendment 3, M11 8.4.4', text: `Potassium at or above 5.0 mmol/L from ${AMENDMENT_EFFECTIVE} (above 5.5 before)`, covered: by((c) => c.form === 'LB' && /\bK\b/.test(c.expr) && /\b5(\.0)?\b(?!\.)/.test(c.expr.replace(/5\.5/g, '')) && c.expr.includes(AMENDMENT_EFFECTIVE)) })
   out.push({ id: 'N-sae', ref: 'M11 9.2.1', text: 'A serious AE with no seriousness criterion ticked', covered: by((c) => c.form === 'AE' && /AESER/.test(c.expr) && /any\(/.test(c.expr)) })
   out.push({ id: 'N-aedate', ref: 'M11 9.2.1', text: 'An AE end date before its start date', covered: by((c) => c.form === 'AE' && /AEENDAT/.test(c.expr) && /AESTDAT/.test(c.expr)) })

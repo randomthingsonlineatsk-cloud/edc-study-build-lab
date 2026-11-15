@@ -278,7 +278,11 @@ export const AMENDMENT_3 = {
   ] as AmendmentChange[],
 }
 
-export interface ProtocolDef { version: string; amendment?: typeof AMENDMENT_3; visits: SoaVisit[]; procedures: Procedure[]; inclusion: Criterion[]; exclusion: Criterion[]; statements: { section: string; text: string }[]; kThreshold: number }
+export interface ProtocolDef {
+  version: string; amendment?: typeof AMENDMENT_3; visits: SoaVisit[]; procedures: Procedure[]; inclusion: Criterion[]; exclusion: Criterion[]; statements: { section: string; text: string }[]; kThreshold: number
+  // A protocol imported from a USDM file (for example one written in the Protocol Builder).
+  id?: string; titlePage?: Record<string, string>; objectives?: { section: string; kind: string; endpoint: string }[]
+}
 const V2: ProtocolDef = { version: '2.0', visits: M11.visits, procedures: M11.procedures, inclusion: M11.inclusion, exclusion: M11.exclusion, statements: M11.statements, kThreshold: 5.5 }
 function amended(): ProtocolDef {
   const visits = [...M11.visits]
@@ -291,4 +295,4 @@ function amended(): ProtocolDef {
     statements: [...M11.statements, { section: '8.4.4', text: `From ${AMENDMENT_EFFECTIVE}, potassium of 5.0 mmol/L or more triggers safety follow-up (5.5 mmol/L before).` }] }
 }
 const A3 = amended()
-export const protocolOf = (p: { protocol?: 'A3' }): ProtocolDef => (p.protocol === 'A3' ? A3 : V2)
+export const protocolOf = (p: { protocol?: 'A3'; imported?: ProtocolDef }): ProtocolDef => p.imported ?? (p.protocol === 'A3' ? A3 : V2)
