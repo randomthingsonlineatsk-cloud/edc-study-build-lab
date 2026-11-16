@@ -112,6 +112,19 @@
                 "contentItemId": "NCI_4.1",
                 "childIds": [],
                 "previousId": "NC_2.2.3",
+                "nextId": "NC_4.1.1",
+                "instanceType": "NarrativeContent"
+              },
+              {
+                "id": "NC_4.1.1",
+                "name": "NC_4.1.1",
+                "sectionNumber": "4.1.1",
+                "sectionTitle": "Stakeholder Input into Design",
+                "displaySectionNumber": true,
+                "displaySectionTitle": true,
+                "contentItemId": "NCI_4.1.1",
+                "childIds": [],
+                "previousId": "NC_4.1",
                 "nextId": "NC_4.2.1",
                 "instanceType": "NarrativeContent"
               },
@@ -124,7 +137,7 @@
                 "displaySectionTitle": true,
                 "contentItemId": "NCI_4.2.1",
                 "childIds": [],
-                "previousId": "NC_4.1",
+                "previousId": "NC_4.1.1",
                 "nextId": "NC_4.2.2",
                 "instanceType": "NarrativeContent"
               },
@@ -281,6 +294,19 @@
                 "contentItemId": "NCI_6.3",
                 "childIds": [],
                 "previousId": "NC_6.2",
+                "nextId": "NC_6.4",
+                "instanceType": "NarrativeContent"
+              },
+              {
+                "id": "NC_6.4",
+                "name": "NC_6.4",
+                "sectionNumber": "6.4",
+                "sectionTitle": "Investigational Trial Intervention Dose Modification",
+                "displaySectionNumber": true,
+                "displaySectionTitle": true,
+                "contentItemId": "NCI_6.4",
+                "childIds": [],
+                "previousId": "NC_6.3",
                 "nextId": "NC_6.5",
                 "instanceType": "NarrativeContent"
               },
@@ -293,7 +319,7 @@
                 "displaySectionTitle": true,
                 "contentItemId": "NCI_6.5",
                 "childIds": [],
-                "previousId": "NC_6.3",
+                "previousId": "NC_6.4",
                 "nextId": "NC_6.6",
                 "instanceType": "NarrativeContent"
               },
@@ -762,6 +788,19 @@
                 "contentItemId": "NCI_12.1",
                 "childIds": [],
                 "previousId": "NC_11.12",
+                "nextId": "NC_12.2",
+                "instanceType": "NarrativeContent"
+              },
+              {
+                "id": "NC_12.2",
+                "name": "NC_12.2",
+                "sectionNumber": "12.2",
+                "sectionTitle": "Country/Region-Specific Differences",
+                "displaySectionNumber": true,
+                "displaySectionTitle": true,
+                "contentItemId": "NCI_12.2",
+                "childIds": [],
+                "previousId": "NC_12.1",
                 "nextId": "NC_13",
                 "instanceType": "NarrativeContent"
               },
@@ -774,7 +813,7 @@
                 "displaySectionTitle": true,
                 "contentItemId": "NCI_13",
                 "childIds": [],
-                "previousId": "NC_12.1",
+                "previousId": "NC_12.2",
                 "nextId": "NC_14",
                 "instanceType": "NarrativeContent"
               },
@@ -8824,7 +8863,13 @@
           {
             "id": "NCI_4.1",
             "name": "NCI_4.1",
-            "text": "This is a double blind, parallel group, placebo-controlled trial with 3 arms (Lumiravostat 25 mg, Lumiravostat 10 mg, Placebo), allocated 1:1:1. It has a screening period of up to 28 days, 16 weeks of treatment and 4 weeks of follow-up. 324 participants are randomised.",
+            "text": "This is a double blind, parallel group, placebo-controlled trial with 3 arms (Lumiravostat 25 mg, Lumiravostat 10 mg, Placebo), allocated 1:1:1. It has a screening period of up to 28 days, 16 weeks of treatment and 4 weeks of follow-up. 324 participants are randomised. Each dose is tested for superiority over placebo.",
+            "instanceType": "NarrativeContentItem"
+          },
+          {
+            "id": "NCI_4.1.1",
+            "name": "NCI_4.1.1",
+            "text": "A panel of six adults living with chronic hand eczema, recruited through a patient organisation (fictional), reviewed the draft protocol. Their advice made itch a key secondary endpoint, cut two on-site visits to telephone calls and simplified the consent form. The panel will review the lay summary of results.",
             "instanceType": "NarrativeContentItem"
           },
           {
@@ -8890,7 +8935,7 @@
           {
             "id": "NCI_6.1",
             "name": "NCI_6.1",
-            "text": "Lumiravostat 25 mg: 25 mg film-coated tablet, oral, once daily, for 16 weeks. Lumiravostat 10 mg: 10 mg film-coated tablet, oral, once daily, for 16 weeks. Placebo tablets match the active tablets in appearance.",
+            "text": "Lumiravostat 25 mg: 25 mg film-coated tablet, oral, once daily, for 16 weeks. Lumiravostat 10 mg: 10 mg film-coated tablet, oral, once daily, for 16 weeks. Placebo tablets match the active tablets in appearance. Lumiravostat is not authorised in any country. The rescue topical corticosteroid (6.9) is an auxiliary medicinal product authorised in the EU, the US and India and used within its authorisation. Tablets are supplied in child-resistant bottles of 35.",
             "instanceType": "NarrativeContentItem"
           },
           {
@@ -8906,6 +8951,12 @@
             "instanceType": "NarrativeContentItem"
           },
           {
+            "id": "NCI_6.4",
+            "name": "NCI_6.4",
+            "text": "No dose reduction is allowed. The investigator may interrupt the trial intervention for up to 14 days for an adverse event; it is restarted only if the event has resolved and no criterion in 7.1 is met.",
+            "instanceType": "NarrativeContentItem"
+          },
+          {
             "id": "NCI_6.5",
             "name": "NCI_6.5",
             "text": "There is no antidote. In case of overdose the participant is monitored and treated symptomatically; the overdose is recorded as a special safety situation (9.4).",
@@ -8914,13 +8965,13 @@
           {
             "id": "NCI_6.6",
             "name": "NCI_6.6",
-            "text": "Trial intervention is stored at 20 to 25 °C in a locked area with access limited to authorised staff. The site records every bottle received, dispensed, returned and destroyed (6.6.3 Accountability).",
+            "text": "Trial intervention is stored at 20 to 25 °C in a locked area with access limited to authorised staff. The site records every bottle received, dispensed, returned and destroyed (6.6.3 Accountability). Bottles are labelled as Annex VI of Regulation (EU) No 536/2014 and the local rules require, without showing the treatment. Unused tablets and empty bottles are returned to the depot for destruction.",
             "instanceType": "NarrativeContentItem"
           },
           {
             "id": "NCI_6.7",
             "name": "NCI_6.7",
-            "text": "Participants are randomised through the interactive response technology system on Day 1. Stratified block randomisation 1:1:1 by IGA-CHE at baseline (3 or 4) and region, through an interactive response technology system. The participant, investigator, assessors and sponsor study team are blinded. The investigator can unblind a participant through the system in an emergency.",
+            "text": "Participants are randomised through the interactive response technology system on Day 1. Stratified block randomisation 1:1:1 by IGA-CHE at baseline (3 or 4) and region, through an interactive response technology system. The participant, investigator, assessors and sponsor study team are blinded. The investigator can unblind a participant through the system in an emergency. An independent statistician generates the randomisation list; it is held in the system, and site staff who enrol participants cannot see it, which conceals the allocation.",
             "instanceType": "NarrativeContentItem"
           },
           {
@@ -8950,7 +9001,7 @@
           {
             "id": "NCI_7.2",
             "name": "NCI_7.2",
-            "text": "A participant may withdraw at any time. Data collected until withdrawal are kept. The site asks, but cannot require, a final safety visit.",
+            "text": "A participant may withdraw at any time. Data collected until withdrawal are kept. The site asks, but cannot require, a final safety visit. Participants who withdraw are not replaced.",
             "instanceType": "NarrativeContentItem"
           },
           {
@@ -8992,7 +9043,7 @@
           {
             "id": "NCI_9.2",
             "name": "NCI_9.2",
-            "text": "9.2.1 Timing: adverse events are collected from the signing of informed consent until the Week 20 follow-up visit. Serious adverse events are reported to the sponsor within 24 hours of the site becoming aware. The sponsor reports suspected unexpected serious adverse reactions to the regulators and ethics committees within the regulatory timelines.",
+            "text": "9.2.1 Timing: adverse events are collected from the signing of informed consent until the Week 20 follow-up visit. Serious adverse events are reported to the sponsor within 24 hours of the site becoming aware. The sponsor reports suspected unexpected serious adverse reactions to the regulators and ethics committees within the regulatory timelines. The following are reported within 24 hours as if serious, as adverse events of special interest: ALT above 3 × ULN with total bilirubin above 2 × ULN, and hepatitis B reactivation. No serious adverse event is exempt from immediate reporting. In the EU the sponsor reports SUSARs to EudraVigilance (Article 42); in the US as IND safety reports (21 CFR 312.32); in India to CDSCO and the ethics committee. Adverse events are followed up until they resolve or stabilise, or to the end of follow-up for non-serious events.",
             "instanceType": "NarrativeContentItem"
           },
           {
@@ -9052,13 +9103,13 @@
           {
             "id": "NCI_11.1",
             "name": "NCI_11.1",
-            "text": "The trial follows the protocol, ICH E6(R3) good clinical practice, the Declaration of Helsinki and the applicable regulations, including Regulation (EU) No 536/2014, 21 CFR parts 50, 56 and 312, and the New Drugs and Clinical Trials Rules, 2019. Each site starts only after its ethics committee approves.",
+            "text": "The trial follows the protocol, ICH E6(R3) good clinical practice, the Declaration of Helsinki and the applicable regulations, including Regulation (EU) No 536/2014, 21 CFR parts 50, 56 and 312, and the New Drugs and Clinical Trials Rules, 2019. Each site starts only after its ethics committee approves. Amendments are approved before they are made, except to remove an immediate hazard, and are communicated to the investigators, the ethics committees and the registries.",
             "instanceType": "NarrativeContentItem"
           },
           {
             "id": "NCI_11.2",
             "name": "NCI_11.2",
-            "text": "The investigator conducts the trial at the site and supervises delegated staff. The sponsor monitors the trial and ensures direct access to source records for monitoring, audits and inspections.",
+            "text": "The investigator conducts the trial at the site and supervises delegated staff. The sponsor monitors the trial and ensures direct access to source records for monitoring, audits and inspections. Halcyon Ridge Pharmaceuticals funds the trial and is responsible for its design, conduct, analysis and publication. Investigators and committee members declare conflicts of interest before the trial and each year.",
             "instanceType": "NarrativeContentItem"
           },
           {
@@ -9094,7 +9145,7 @@
           {
             "id": "NCI_11.8",
             "name": "NCI_11.8",
-            "text": "Participants are identified by number only. Personal data are processed under the applicable data protection laws; a breach is reported to the sponsor within 24 hours and handled under its procedure.",
+            "text": "Participants are identified by number only. Personal data are processed under the applicable data protection laws; a breach is reported to the sponsor within 24 hours and handled under its procedure. In the EU the GDPR (Regulation (EU) 2016/679) applies, and in India the Digital Personal Data Protection Act 2023. Data are pseudonymised: records leave the site coded by participant number, and the key stays at the site. After a breach the sponsor contains it, assesses the risk to participants and notifies the authorities and participants as the law requires.",
             "instanceType": "NarrativeContentItem"
           },
           {
@@ -9118,13 +9169,19 @@
           {
             "id": "NCI_11.12",
             "name": "NCI_11.12",
-            "text": "Results are posted in the public registries within one year of the end of the trial and submitted for publication whatever the outcome.",
+            "text": "A summary of results is posted in CTIS, ClinicalTrials.gov and CTRI within one year of the end of the trial, with a lay summary sent to participants. The results are submitted for publication whatever the outcome, under the sponsor’s publication policy. The protocol and statistical analysis plan are posted with the results. De-identified participant-level data are shared with qualified researchers on request, once the product is approved or development has stopped.",
             "instanceType": "NarrativeContentItem"
           },
           {
             "id": "NCI_12.1",
             "name": "NCI_12.1",
-            "text": "Haematology: haemoglobin, white cells with differential (including neutrophils and lymphocytes), platelets. Chemistry: ALT, AST, alkaline phosphatase, bilirubin, creatinine, potassium. Hepatitis B: HBsAg, anti-HBc and, if anti-HBc positive, HBV DNA. Pregnancy: serum β-hCG at screening, urine at other visits.",
+            "text": "Samples are analysed at the central laboratory (Northgate Central Laboratory, fictional) and destroyed within 12 months after the end of the trial; none are kept for future research. Haematology: haemoglobin, white cells with differential (including neutrophils and lymphocytes), platelets. Chemistry: ALT, AST, alkaline phosphatase, bilirubin, creatinine, potassium. Hepatitis B: HBsAg, anti-HBc and, if anti-HBc positive, HBV DNA. Pregnancy: serum β-hCG at screening, urine at other visits.",
+            "instanceType": "NarrativeContentItem"
+          },
+          {
+            "id": "NCI_12.2",
+            "name": "NCI_12.2",
+            "text": "India: sites and investigators (fictional): Dr A. Rao, Department of Dermatology, Western Coast Medical College, Mumbai; Dr S. Iyer, Lakeside Skin Institute, Bengaluru. Each investigator signs the undertaking in Table 4 of the Third Schedule of the NDCT Rules 2019, kept with this protocol. Serious adverse events are reported to CDSCO, the sponsor and the ethics committee within 24 hours. Consent is recorded on audio-video where the Rules require it.\n\nUnited States: the investigators, their research facilities and the reviewing IRB at each site are listed on each investigator’s Form FDA 1572 in the IND.\n\n24-hour safety line (fictional): +353 1 000 0000.",
             "instanceType": "NarrativeContentItem"
           },
           {
@@ -9145,7 +9202,7 @@
           {
             "id": "Ext_1",
             "url": "https://randomthingsonlineatsk-cloud.github.io/protocol-builder/ext/key-facts",
-            "valueString": "{\"facts\":{\"participants\":324,\"perArm\":108,\"dropoutPct\":10,\"treatmentWeeks\":16,\"followUpWeeks\":4,\"participationWeeks\":25,\"ageMin\":18,\"ageMax\":75,\"power\":0.9,\"alpha\":0.05,\"sided\":2,\"assumption\":{\"kind\":\"proportions\",\"p0\":0.15,\"p1\":0.35}},\"statements\":{\"10.11\":\"A sample size of 324 randomised participants (108 per arm) gives 90% power to detect a difference in IGA-CHE treatment success of 35% against 15% for each dose against placebo (two-sided alpha 0.05; two-proportion normal approximation, 97 evaluable per arm), allowing for 10% of participants without a Week 16 assessment.\"},\"multiplicity\":\"The familywise type I error rate is controlled at a two-sided 0.05 by a fixed-sequence procedure: IGA-CHE success for 25 mg, then 10 mg; then HECSI-75 for 25 mg, then 10 mg; then itch for 25 mg, then 10 mg. Testing stops at the first non-significant result.\",\"rescue\":\"A class III topical corticosteroid may be used as rescue therapy for intolerable symptoms after Week 4, at the investigator’s discretion. Use is recorded on the concomitant therapy form.\",\"aeFrom\":\"consent\",\"aeTo\":\"FU\",\"title\":{\"Full Title\":\"VERDANT-1: a randomised, double-blind, placebo-controlled phase 3 study of lumiravostat (Ostrevia) 10 mg and 25 mg once daily for 16 weeks in adults with moderate to severe chronic hand eczema\",\"Trial Acronym\":\"VERDANT-1\",\"Sponsor Protocol Identifier\":\"HRP-301\",\"Original Protocol Indicator\":\"Yes\",\"Version Number\":\"1.0\",\"Version Date\":\"2026-01-20\",\"Sponsor's Investigational Product Code(s)\":\"HRP-4417\",\"Investigational Product Name(s)\":\"lumiravostat (Ostrevia)\",\"Trial Phase\":\"Phase 3\",\"Short Title\":\"Lumiravostat in moderate to severe chronic hand eczema\",\"Sponsor Name and Address\":\"Halcyon Ridge Pharmaceuticals (fictional), 1 Harbour Row, Dublin, Ireland\",\"FDA IND Number\":\"000000 (fictional)\",\"EU CT Number\":\"2026-500000-00-00 (fictional)\",\"CTRI Number\":\"CTRI/2026/00/000000 (fictional)\",\"Sponsor Approval\":\"2026-01-20, electronic signature in the sponsor’s document system\",\"Sponsor Signatory\":\"Medical Director, Dermatology (fictional)\"},\"design\":{\"Intervention Model\":\"Parallel Group\",\"Population Type\":\"With Disease\",\"Population Diagnosis or Condition\":\"Moderate to severe chronic hand eczema inadequately controlled with topical corticosteroids\",\"Population Age (Minimum and Maximum)\":\"18 to 75\",\"Units of Age\":\"Years\",\"Control Type\":\"Placebo\",\"Control Description\":\"Matching placebo tablets once daily\",\"Intervention Assignment Method\":\"Randomisation\",\"Randomisation Type\":\"Stratified block randomisation 1:1:1 by IGA-CHE at baseline (3 or 4) and region, through an interactive response technology system.\",\"Stratification Indicator\":\"Yes\",\"Site Distribution\":\"About 60 sites\",\"Site Geographic Scope\":\"Canada, Germany, India and the United States\",\"Master Protocol Indicator\":\"No\",\"Drug/Device Combination Product Indicator\":\"No\",\"Adaptive Trial Design Indicator\":\"No\",\"Number of Arms\":\"3\",\"Trial Blind Schema\":\"Double Blind\",\"Blinded Roles\":\"Participant, investigator, outcomes assessor, sponsor study team\",\"Target/Maximum Number of Participants\":\"324\",\"Number of Participants Randomly Assigned\":\"324\",\"Total Planned Duration of Trial Intervention\":\"16 weeks\",\"Total Planned Duration of Trial Participation\":\"Up to 25 weeks (screening up to 4 weeks, 16 weeks of treatment, follow-up at Week 20)\",\"Independent Committees\":\"Independent data monitoring committee\"},\"procedures\":[{\"id\":\"P01\",\"section\":\"11.3\",\"concept\":\"Informed Consent Obtained\",\"form\":\"IC\",\"purpose\":[\"conduct\"],\"minutes\":30},{\"id\":\"P02\",\"section\":\"8.2\",\"concept\":\"Demographics\",\"form\":\"DM\",\"purpose\":[\"conduct\"],\"minutes\":5},{\"id\":\"P03\",\"section\":\"5.2, 5.3\",\"concept\":\"Eligibility Criteria Not Met\",\"form\":\"IE\",\"purpose\":[\"conduct\"],\"minutes\":10},{\"id\":\"P04\",\"section\":\"8.2\",\"concept\":\"Medical History\",\"form\":\"MH\",\"purpose\":[\"conduct\"],\"minutes\":15},{\"id\":\"P05\",\"section\":\"8.4.2\",\"concept\":\"Vital Signs (Blood Pressure, Pulse)\",\"form\":\"VS\",\"purpose\":[\"safety\"],\"minutes\":10,\"bcs\":[\"SYSTOLIC BLOOD PRESSURE\",\"DIASTOLIC BLOOD PRESSURE\",\"PULSE\",\"WEIGHT\"]},{\"id\":\"P06\",\"section\":\"8.2, 12.1\",\"concept\":\"Hepatitis B Screening Panel\",\"form\":\"LB\",\"purpose\":[\"eligibility\"],\"bloodMl\":5,\"minutes\":5},{\"id\":\"P07\",\"section\":\"8.4.4, 12.1\",\"concept\":\"Central Laboratory Sample\",\"form\":\"LB\",\"purpose\":[\"safety\"],\"footnote\":\"a: participants positive for anti-HBc with undetectable HBV DNA also have HBV DNA measured at every visit from Week 4.\",\"bloodMl\":10,\"minutes\":5,\"bcs\":[\"HEMOGLOBIN CONCENTRATION IN BLOOD\",\"LEUKOCYTE COUNT IN BLOOD\",\"ABSOLUTE NEUTROPHIL COUNT IN BLOOD\",\"LYMPHOCYTE COUNT IN BLOOD\",\"PLATELET COUNT IN BLOOD\",\"ALANINE AMINOTRANSFERASE CONCENTRATION IN SERUM OR PLASMA\",\"ASPARTATE AMINOTRANSFERASE IN SERUM OR PLASMA\",\"BILIRUBIN CONCENTRATION IN SERUM OR PLASMA\",\"ALKALINE PHOSPHATASE CONCENTRATION IN SERUM OR PLASMA\",\"CREATININE CONCENTRATION IN SERUM OR PLASMA\",\"HEPATITIS B VIRUS DNA CONCENTRATION IN SERUM OR PLASMA\"]},{\"id\":\"P08\",\"section\":\"8.4.5\",\"concept\":\"Pregnancy Test (Choriogonadotropin Beta)\",\"form\":\"PREG\",\"purpose\":[\"safety\"],\"footnote\":\"b: serum at screening, urine at the other visits.\",\"minutes\":5},{\"id\":\"P09\",\"section\":\"8.3\",\"concept\":\"Investigator Global Assessment for Chronic Hand Eczema\",\"form\":\"QS\",\"purpose\":[\"endpoint\"],\"minutes\":5},{\"id\":\"P10\",\"section\":\"8.3\",\"concept\":\"Hand Eczema Severity Index\",\"form\":\"QS\",\"purpose\":[\"endpoint\"],\"minutes\":10},{\"id\":\"P11\",\"section\":\"8.3\",\"concept\":\"Itch Numeric Rating Scale\",\"form\":\"QS\",\"purpose\":[\"endpoint\"],\"footnote\":\"c: completed by the participant before any other procedure.\",\"minutes\":2},{\"id\":\"P12\",\"section\":\"6.6.3, 6.8\",\"concept\":\"Study Drug Dispensing and Accountability\",\"form\":\"EX\",\"purpose\":[\"conduct\"],\"footnote\":\"d: dispensing on Day 1 to Week 12; tablets returned are counted at every visit after Day 1, including Week 16.\",\"minutes\":10},{\"id\":\"P13\",\"section\":\"9.2\",\"concept\":\"Adverse Event\",\"form\":\"AE\",\"purpose\":[\"safety\"],\"footnote\":\"e: collected from the signing of informed consent until the Week 20 follow-up visit.\",\"from\":\"SCR\"},{\"id\":\"P14\",\"section\":\"6.9, 6.10\",\"concept\":\"Concomitant Medication\",\"form\":\"CM\",\"purpose\":[\"safety\",\"conduct\"],\"from\":\"SCR\"},{\"id\":\"P15\",\"section\":\"7.2\",\"concept\":\"Disposition\",\"form\":\"DS\",\"purpose\":[\"conduct\"],\"minutes\":5}],\"criteria\":[{\"code\":\"IN01\",\"procedureIds\":[\"P02\"]},{\"code\":\"IN02\",\"procedureIds\":[\"P04\"]},{\"code\":\"IN03\",\"procedureIds\":[\"P09\"]},{\"code\":\"IN04\",\"procedureIds\":[\"P08\"]},{\"code\":\"EX01\",\"procedureIds\":[\"P06\"]},{\"code\":\"EX02\",\"procedureIds\":[\"P14\"]},{\"code\":\"EX03\",\"procedureIds\":[\"P07\"]}],\"endpoints\":[{\"id\":\"END1\",\"variableType\":\"binary\",\"procedureIds\":[\"P09\"],\"visitIds\":[\"W16\"]},{\"id\":\"END2\",\"variableType\":\"binary\",\"procedureIds\":[\"P10\"],\"visitIds\":[\"W16\"]},{\"id\":\"END3\",\"variableType\":\"binary\",\"procedureIds\":[\"P11\"],\"visitIds\":[\"W16\"]},{\"id\":\"END4\",\"variableType\":\"binary\",\"procedureIds\":[\"P13\",\"P07\",\"P05\"],\"visitIds\":[]}],\"objectives\":[{\"id\":\"OBJ1\",\"kind\":\"Efficacy\"},{\"id\":\"OBJ2\",\"kind\":\"Efficacy\"},{\"id\":\"OBJ3\",\"kind\":\"Efficacy\"},{\"id\":\"OBJ4\",\"kind\":\"Safety\"}],\"estimands\":[{\"id\":\"EST1\",\"objectiveId\":\"OBJ1\",\"population\":\"Adults aged 18 to 75 with moderate to severe chronic hand eczema inadequately controlled with topical corticosteroids\",\"estimator\":\"The difference in response rates between each dose and placebo with a 95% Wald confidence interval; Fisher’s exact test.\",\"missing\":\"Participants without a Week 16 assessment are non-responders.\",\"sensitivity\":\"A Cochran-Mantel-Haenszel analysis stratified by baseline IGA-CHE and region; and a hypothetical strategy for discontinuation with multiple imputation.\",\"treatment\":\"Lumiravostat 25 mg or 10 mg once daily, each compared with placebo, for 16 weeks\"},{\"id\":\"EST2\",\"objectiveId\":\"OBJ2\",\"population\":\"As the primary estimand\",\"estimator\":\"The difference in response rates between each dose and placebo with a 95% Wald confidence interval; Fisher’s exact test.\",\"missing\":\"Participants without a Week 16 assessment are non-responders.\",\"sensitivity\":\"As the primary estimand.\",\"treatment\":\"Lumiravostat 25 mg or 10 mg once daily, each compared with placebo, for 16 weeks\"},{\"id\":\"EST3\",\"objectiveId\":\"OBJ3\",\"population\":\"Participants of the primary estimand population with a baseline worst itch of 4 or more\",\"estimator\":\"The difference in response rates between each dose and placebo with a 95% Wald confidence interval; Fisher’s exact test.\",\"missing\":\"Participants without a Week 16 assessment are non-responders.\",\"sensitivity\":\"As the primary estimand.\",\"treatment\":\"Lumiravostat 25 mg or 10 mg once daily, each compared with placebo, for 16 weeks\"}],\"visits\":[{\"id\":\"SCR\",\"type\":\"On site\",\"epoch\":\"Screening\"},{\"id\":\"D1\",\"type\":\"On site\",\"epoch\":\"Treatment\"},{\"id\":\"W2\",\"type\":\"On site\",\"epoch\":\"Treatment\"},{\"id\":\"W4\",\"type\":\"On site\",\"epoch\":\"Treatment\"},{\"id\":\"W8\",\"type\":\"On site\",\"epoch\":\"Treatment\"},{\"id\":\"W12\",\"type\":\"On site\",\"epoch\":\"Treatment\"},{\"id\":\"W16\",\"type\":\"On site\",\"epoch\":\"Treatment\"},{\"id\":\"FU\",\"type\":\"On site\",\"epoch\":\"Follow-up\"}],\"interventions\":[{\"id\":\"INT1\",\"name\":\"Lumiravostat 25 mg\",\"role\":\"Investigational\",\"dose\":\"25 mg film-coated tablet\",\"doseValue\":25,\"doseUnit\":\"mg\",\"route\":\"Oral\",\"frequency\":\"once daily\",\"durationWeeks\":16},{\"id\":\"INT2\",\"name\":\"Lumiravostat 10 mg\",\"role\":\"Investigational\",\"dose\":\"10 mg film-coated tablet\",\"doseValue\":10,\"doseUnit\":\"mg\",\"route\":\"Oral\",\"frequency\":\"once daily\",\"durationWeeks\":16},{\"id\":\"INT3\",\"name\":\"Placebo\",\"role\":\"Placebo\",\"dose\":\"matching placebo tablet\",\"doseValue\":0,\"doseUnit\":\"tablet\",\"route\":\"Oral\",\"frequency\":\"once daily\",\"durationWeeks\":16},{\"id\":\"INT4\",\"name\":\"Topical corticosteroid (rescue)\",\"role\":\"Rescue\",\"dose\":\"class III topical corticosteroid, thin layer\",\"doseValue\":0,\"doseUnit\":\"application\",\"route\":\"Topical\",\"frequency\":\"as needed\",\"durationWeeks\":0}],\"arms\":[{\"id\":\"ARM1\",\"intervention\":\"Lumiravostat 25 mg orally once daily for 16 weeks\",\"ratio\":1,\"type\":\"Investigational\"},{\"id\":\"ARM2\",\"intervention\":\"Lumiravostat 10 mg orally once daily for 16 weeks\",\"ratio\":1,\"type\":\"Investigational\"},{\"id\":\"ARM3\",\"intervention\":\"Matching placebo orally once daily for 16 weeks\",\"ratio\":1,\"type\":\"Placebo\"}]}",
+            "valueString": "{\"facts\":{\"participants\":324,\"perArm\":108,\"dropoutPct\":10,\"treatmentWeeks\":16,\"followUpWeeks\":4,\"participationWeeks\":25,\"ageMin\":18,\"ageMax\":75,\"power\":0.9,\"alpha\":0.05,\"sided\":2,\"assumption\":{\"kind\":\"proportions\",\"p0\":0.15,\"p1\":0.35}},\"statements\":{\"10.11\":\"A sample size of 324 randomised participants (108 per arm) gives 90% power to detect a difference in IGA-CHE treatment success of 35% against 15% for each dose against placebo (two-sided alpha 0.05; two-proportion normal approximation, 97 evaluable per arm), allowing for 10% of participants without a Week 16 assessment.\"},\"multiplicity\":\"The familywise type I error rate is controlled at a two-sided 0.05 by a fixed-sequence procedure: IGA-CHE success for 25 mg, then 10 mg; then HECSI-75 for 25 mg, then 10 mg; then itch for 25 mg, then 10 mg. Testing stops at the first non-significant result.\",\"rescue\":\"A class III topical corticosteroid may be used as rescue therapy for intolerable symptoms after Week 4, at the investigator’s discretion. Use is recorded on the concomitant therapy form.\",\"aeFrom\":\"consent\",\"aeTo\":\"FU\",\"title\":{\"Full Title\":\"VERDANT-1: a randomised, double-blind, placebo-controlled phase 3 study of lumiravostat (Ostrevia) 10 mg and 25 mg once daily for 16 weeks in adults with moderate to severe chronic hand eczema\",\"Trial Acronym\":\"VERDANT-1\",\"Sponsor Protocol Identifier\":\"HRP-301\",\"Original Protocol Indicator\":\"Yes\",\"Version Number\":\"1.0\",\"Version Date\":\"2026-01-20\",\"Sponsor's Investigational Product Code(s)\":\"HRP-4417\",\"Investigational Product Name(s)\":\"lumiravostat (Ostrevia)\",\"Trial Phase\":\"Phase 3\",\"Short Title\":\"Lumiravostat in moderate to severe chronic hand eczema\",\"Sponsor Name and Address\":\"Halcyon Ridge Pharmaceuticals (fictional), 1 Harbour Row, Dublin, Ireland\",\"FDA IND Number\":\"000000 (fictional)\",\"NCT Number\":\"NCT99930101 (fictional)\",\"EU CT Number\":\"2026-500000-00-00 (fictional)\",\"CTRI Number\":\"CTRI/2026/00/000000 (fictional)\",\"Sponsor Approval\":\"2026-01-20, electronic signature in the sponsor’s document system\",\"Sponsor Signatory\":\"Medical Director, Dermatology (fictional)\",\"Medical Expert Contact\":\"Medical monitor, Halcyon Ridge Pharmaceuticals (fictional); 24-hour safety line in 12.2\"},\"design\":{\"Intervention Model\":\"Parallel Group\",\"Population Type\":\"With Disease\",\"Population Diagnosis or Condition\":\"Moderate to severe chronic hand eczema inadequately controlled with topical corticosteroids\",\"Population Age (Minimum and Maximum)\":\"18 to 75\",\"Units of Age\":\"Years\",\"Control Type\":\"Placebo\",\"Control Description\":\"Matching placebo tablets once daily\",\"Intervention Assignment Method\":\"Randomisation\",\"Randomisation Type\":\"Stratified block randomisation 1:1:1 by IGA-CHE at baseline (3 or 4) and region, through an interactive response technology system.\",\"Stratification Indicator\":\"Yes\",\"Site Distribution\":\"About 60 sites\",\"Site Geographic Scope\":\"Canada, Germany, India and the United States\",\"Master Protocol Indicator\":\"No\",\"Drug/Device Combination Product Indicator\":\"No\",\"Adaptive Trial Design Indicator\":\"No\",\"Number of Arms\":\"3\",\"Trial Blind Schema\":\"Double Blind\",\"Blinded Roles\":\"Participant, investigator, outcomes assessor, sponsor study team\",\"Target/Maximum Number of Participants\":\"324\",\"Number of Participants Randomly Assigned\":\"324\",\"Total Planned Duration of Trial Intervention\":\"16 weeks\",\"Total Planned Duration of Trial Participation\":\"Up to 25 weeks (screening up to 4 weeks, 16 weeks of treatment, follow-up at Week 20)\",\"Independent Committees\":\"Independent data monitoring committee\"},\"procedures\":[{\"id\":\"P01\",\"section\":\"11.3\",\"concept\":\"Informed Consent Obtained\",\"form\":\"IC\",\"purpose\":[\"conduct\"],\"minutes\":30},{\"id\":\"P02\",\"section\":\"8.2\",\"concept\":\"Demographics\",\"form\":\"DM\",\"purpose\":[\"conduct\"],\"minutes\":5},{\"id\":\"P03\",\"section\":\"5.2, 5.3\",\"concept\":\"Eligibility Criteria Not Met\",\"form\":\"IE\",\"purpose\":[\"conduct\"],\"minutes\":10},{\"id\":\"P04\",\"section\":\"8.2\",\"concept\":\"Medical History\",\"form\":\"MH\",\"purpose\":[\"conduct\"],\"minutes\":15},{\"id\":\"P05\",\"section\":\"8.4.2\",\"concept\":\"Vital Signs (Blood Pressure, Pulse)\",\"form\":\"VS\",\"purpose\":[\"safety\"],\"minutes\":10,\"bcs\":[\"SYSTOLIC BLOOD PRESSURE\",\"DIASTOLIC BLOOD PRESSURE\",\"PULSE\",\"WEIGHT\"]},{\"id\":\"P06\",\"section\":\"8.2, 12.1\",\"concept\":\"Hepatitis B Screening Panel\",\"form\":\"LB\",\"purpose\":[\"eligibility\"],\"bloodMl\":5,\"minutes\":5},{\"id\":\"P07\",\"section\":\"8.4.4, 12.1\",\"concept\":\"Central Laboratory Sample\",\"form\":\"LB\",\"purpose\":[\"safety\"],\"footnote\":\"a: participants positive for anti-HBc with undetectable HBV DNA also have HBV DNA measured at every visit from Week 4.\",\"bloodMl\":10,\"minutes\":5,\"bcs\":[\"HEMOGLOBIN CONCENTRATION IN BLOOD\",\"LEUKOCYTE COUNT IN BLOOD\",\"ABSOLUTE NEUTROPHIL COUNT IN BLOOD\",\"LYMPHOCYTE COUNT IN BLOOD\",\"PLATELET COUNT IN BLOOD\",\"ALANINE AMINOTRANSFERASE CONCENTRATION IN SERUM OR PLASMA\",\"ASPARTATE AMINOTRANSFERASE IN SERUM OR PLASMA\",\"BILIRUBIN CONCENTRATION IN SERUM OR PLASMA\",\"ALKALINE PHOSPHATASE CONCENTRATION IN SERUM OR PLASMA\",\"CREATININE CONCENTRATION IN SERUM OR PLASMA\",\"HEPATITIS B VIRUS DNA CONCENTRATION IN SERUM OR PLASMA\"]},{\"id\":\"P08\",\"section\":\"8.4.5\",\"concept\":\"Pregnancy Test (Choriogonadotropin Beta)\",\"form\":\"PREG\",\"purpose\":[\"safety\"],\"footnote\":\"b: serum at screening, urine at the other visits.\",\"minutes\":5},{\"id\":\"P09\",\"section\":\"8.3\",\"concept\":\"Investigator Global Assessment for Chronic Hand Eczema\",\"form\":\"QS\",\"purpose\":[\"endpoint\"],\"minutes\":5},{\"id\":\"P10\",\"section\":\"8.3\",\"concept\":\"Hand Eczema Severity Index\",\"form\":\"QS\",\"purpose\":[\"endpoint\"],\"minutes\":10},{\"id\":\"P11\",\"section\":\"8.3\",\"concept\":\"Itch Numeric Rating Scale\",\"form\":\"QS\",\"purpose\":[\"endpoint\"],\"footnote\":\"c: completed by the participant before any other procedure.\",\"minutes\":2},{\"id\":\"P12\",\"section\":\"6.6.3, 6.8\",\"concept\":\"Study Drug Dispensing and Accountability\",\"form\":\"EX\",\"purpose\":[\"conduct\"],\"footnote\":\"d: dispensing on Day 1 to Week 12; tablets returned are counted at every visit after Day 1, including Week 16.\",\"minutes\":10},{\"id\":\"P13\",\"section\":\"9.2\",\"concept\":\"Adverse Event\",\"form\":\"AE\",\"purpose\":[\"safety\"],\"footnote\":\"e: collected from the signing of informed consent until the Week 20 follow-up visit.\",\"from\":\"SCR\"},{\"id\":\"P14\",\"section\":\"6.9, 6.10\",\"concept\":\"Concomitant Medication\",\"form\":\"CM\",\"purpose\":[\"safety\",\"conduct\"],\"from\":\"SCR\"},{\"id\":\"P15\",\"section\":\"7.2\",\"concept\":\"Disposition\",\"form\":\"DS\",\"purpose\":[\"conduct\"],\"minutes\":5}],\"criteria\":[{\"code\":\"IN01\",\"procedureIds\":[\"P02\"]},{\"code\":\"IN02\",\"procedureIds\":[\"P04\"]},{\"code\":\"IN03\",\"procedureIds\":[\"P09\"]},{\"code\":\"IN04\",\"procedureIds\":[\"P08\"]},{\"code\":\"EX01\",\"procedureIds\":[\"P06\"]},{\"code\":\"EX02\",\"procedureIds\":[\"P14\"]},{\"code\":\"EX03\",\"procedureIds\":[\"P07\"]}],\"endpoints\":[{\"id\":\"END1\",\"variableType\":\"binary\",\"procedureIds\":[\"P09\"],\"visitIds\":[\"W16\"]},{\"id\":\"END2\",\"variableType\":\"binary\",\"procedureIds\":[\"P10\"],\"visitIds\":[\"W16\"]},{\"id\":\"END3\",\"variableType\":\"binary\",\"procedureIds\":[\"P11\"],\"visitIds\":[\"W16\"]},{\"id\":\"END4\",\"variableType\":\"binary\",\"procedureIds\":[\"P13\",\"P07\",\"P05\"],\"visitIds\":[]}],\"objectives\":[{\"id\":\"OBJ1\",\"kind\":\"Efficacy\"},{\"id\":\"OBJ2\",\"kind\":\"Efficacy\"},{\"id\":\"OBJ3\",\"kind\":\"Efficacy\"},{\"id\":\"OBJ4\",\"kind\":\"Safety\"}],\"estimands\":[{\"id\":\"EST1\",\"objectiveId\":\"OBJ1\",\"population\":\"Adults aged 18 to 75 with moderate to severe chronic hand eczema inadequately controlled with topical corticosteroids\",\"estimator\":\"The difference in response rates between each dose and placebo with a 95% Wald confidence interval; Fisher’s exact test.\",\"missing\":\"Participants without a Week 16 assessment are non-responders.\",\"sensitivity\":\"A Cochran-Mantel-Haenszel analysis stratified by baseline IGA-CHE and region; and a hypothetical strategy for discontinuation with multiple imputation.\",\"treatment\":\"Lumiravostat 25 mg or 10 mg once daily, each compared with placebo, for 16 weeks\"},{\"id\":\"EST2\",\"objectiveId\":\"OBJ2\",\"population\":\"As the primary estimand\",\"estimator\":\"The difference in response rates between each dose and placebo with a 95% Wald confidence interval; Fisher’s exact test.\",\"missing\":\"Participants without a Week 16 assessment are non-responders.\",\"sensitivity\":\"As the primary estimand.\",\"treatment\":\"Lumiravostat 25 mg or 10 mg once daily, each compared with placebo, for 16 weeks\"},{\"id\":\"EST3\",\"objectiveId\":\"OBJ3\",\"population\":\"Participants of the primary estimand population with a baseline worst itch of 4 or more\",\"estimator\":\"The difference in response rates between each dose and placebo with a 95% Wald confidence interval; Fisher’s exact test.\",\"missing\":\"Participants without a Week 16 assessment are non-responders.\",\"sensitivity\":\"As the primary estimand.\",\"treatment\":\"Lumiravostat 25 mg or 10 mg once daily, each compared with placebo, for 16 weeks\"}],\"visits\":[{\"id\":\"SCR\",\"type\":\"On site\",\"epoch\":\"Screening\"},{\"id\":\"D1\",\"type\":\"On site\",\"epoch\":\"Treatment\"},{\"id\":\"W2\",\"type\":\"On site\",\"epoch\":\"Treatment\"},{\"id\":\"W4\",\"type\":\"On site\",\"epoch\":\"Treatment\"},{\"id\":\"W8\",\"type\":\"On site\",\"epoch\":\"Treatment\"},{\"id\":\"W12\",\"type\":\"On site\",\"epoch\":\"Treatment\"},{\"id\":\"W16\",\"type\":\"On site\",\"epoch\":\"Treatment\"},{\"id\":\"FU\",\"type\":\"On site\",\"epoch\":\"Follow-up\"}],\"interventions\":[{\"id\":\"INT1\",\"name\":\"Lumiravostat 25 mg\",\"role\":\"Investigational\",\"dose\":\"25 mg film-coated tablet\",\"doseValue\":25,\"doseUnit\":\"mg\",\"route\":\"Oral\",\"frequency\":\"once daily\",\"durationWeeks\":16},{\"id\":\"INT2\",\"name\":\"Lumiravostat 10 mg\",\"role\":\"Investigational\",\"dose\":\"10 mg film-coated tablet\",\"doseValue\":10,\"doseUnit\":\"mg\",\"route\":\"Oral\",\"frequency\":\"once daily\",\"durationWeeks\":16},{\"id\":\"INT3\",\"name\":\"Placebo\",\"role\":\"Placebo\",\"dose\":\"matching placebo tablet\",\"doseValue\":0,\"doseUnit\":\"tablet\",\"route\":\"Oral\",\"frequency\":\"once daily\",\"durationWeeks\":16},{\"id\":\"INT4\",\"name\":\"Topical corticosteroid (rescue)\",\"role\":\"Rescue\",\"dose\":\"class III topical corticosteroid, thin layer\",\"doseValue\":0,\"doseUnit\":\"application\",\"route\":\"Topical\",\"frequency\":\"as needed\",\"durationWeeks\":0}],\"arms\":[{\"id\":\"ARM1\",\"intervention\":\"Lumiravostat 25 mg orally once daily for 16 weeks\",\"ratio\":1,\"type\":\"Investigational\"},{\"id\":\"ARM2\",\"intervention\":\"Lumiravostat 10 mg orally once daily for 16 weeks\",\"ratio\":1,\"type\":\"Investigational\"},{\"id\":\"ARM3\",\"intervention\":\"Matching placebo orally once daily for 16 weeks\",\"ratio\":1,\"type\":\"Placebo\"}]}",
             "extensionAttributes": [],
             "instanceType": "ExtensionAttribute"
           }
@@ -9155,7 +9212,7 @@
             "id": "StudyDesign_1",
             "name": "VERDANT-1 design",
             "label": "",
-            "description": "This is a double blind, parallel group, placebo-controlled trial with 3 arms (Lumiravostat 25 mg, Lumiravostat 10 mg, Placebo), allocated 1:1:1. It has a screening period of up to 28 days, 16 weeks of treatment and 4 weeks of follow-up. 324 participants are randomised.",
+            "description": "This is a double blind, parallel group, placebo-controlled trial with 3 arms (Lumiravostat 25 mg, Lumiravostat 10 mg, Placebo), allocated 1:1:1. It has a screening period of up to 28 days, 16 weeks of treatment and 4 weeks of follow-up. 324 participants are randomised. Each dose is tested for superiority over placebo.",
             "instanceType": "InterventionalStudyDesign",
             "rationale": "A parallel group design is used because the condition can change over the treatment period and the effect is not expected to wash out quickly, so a cross-over design would not be reliable.",
             "model": {
@@ -10910,7 +10967,6 @@
                     "description": "",
                     "encounterId": "Encounter_D1",
                     "activityIds": [
-                      "Activity_P03",
                       "Activity_P05",
                       "Activity_P08",
                       "Activity_P09",
