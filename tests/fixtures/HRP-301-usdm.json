@@ -8944,7 +8944,7 @@
           {
             "id": "NCI_7.1",
             "name": "NCI_7.1",
-            "text": "The trial intervention is stopped permanently for pregnancy, a serious adverse reaction, or if the investigator judges it in the participant’s interest. Participants who stop the intervention stay in the trial and attend every visit, so their data can be used.",
+            "text": "The trial intervention is stopped permanently for: ALT above 5 × ULN; ALT above 3 × ULN with total bilirubin above 2 × ULN; HBV DNA above the lower limit of quantification; pregnancy; a serious adverse reaction; or if the investigator judges it in the participant’s interest. Participants who stop the intervention stay in the trial and attend every visit to Week 20, so their data can be used.",
             "instanceType": "NarrativeContentItem"
           },
           {
