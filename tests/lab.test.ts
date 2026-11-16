@@ -146,7 +146,7 @@ describe('USDM from the Protocol Builder', () => {
       expect(p.imported?.id).toBe('HRP-301')
       expect(p.build.study.protocol).toBe('HRP-301')
       expect(p.build.visits.map((v) => v.id)).toEqual(['SCR', 'D1', 'W2', 'W4', 'W8', 'W12', 'W16', 'FU'])
-      expect(Object.keys(p.build.forms)).toEqual(expect.arrayContaining(['SV', 'IC', 'DM', 'IE', 'MH', 'VS', 'LBC', 'EX', 'AE', 'CM', 'EOS', 'F06', 'F08', 'F09', 'F10', 'F11']))
+      expect(Object.keys(p.build.forms)).toEqual(expect.arrayContaining(['SV', 'IC', 'DM', 'IE', 'MH', 'VS', 'LBC', 'EX', 'AE', 'CM', 'EOS', 'PREG', 'F06', 'F09', 'F10', 'F11']))
       expect(p.build.forms.F09.fields.map((f) => f.id)).toEqual(['HEADAT', 'ASSESSOR', 'IGACHE'])
       expect(p.build.codelists.IETEST.map((c) => c.value)).toEqual(['IN01', 'IN02', 'IN03', 'IN04', 'EX01', 'EX02', 'EX03'])
       // The protocol is read correctly; the generator's misses are found against it.

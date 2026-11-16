@@ -76,6 +76,7 @@ const CONCEPT_FORM: Record<string, string> = {
   'Informed Consent Obtained': 'IC', Demographics: 'DM', 'Eligibility Criteria Not Met': 'IE', 'Medical History': 'MH', 'Vital Signs (Blood Pressure, Pulse)': 'VS',
   'Body Weight': 'VS', 'Body Height': 'VS', 'Local Safety Laboratory Panel': 'LB', 'Central Laboratory Sample': 'LBC', '12-Lead ECG': 'EG',
   'Study Drug Dispensing and Accountability': 'EX', 'Adverse Event': 'AE', 'Concomitant Medication': 'CM', Disposition: 'EOS',
+  'Pregnancy Test (Choriogonadotropin Beta)': 'PREG',
 }
 const CONTINUOUS = new Set(['AE', 'CM'])
 const days = (d?: string | null) => (d == null ? 0 : Number(/^P(\d+)D$/.exec(d)?.[1] ?? NaN))

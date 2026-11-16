@@ -9587,7 +9587,7 @@
                   {
                     "id": "ExtCdash_P10",
                     "url": "https://randomthingsonlineatsk-cloud.github.io/protocol-builder/ext/cdash-fields",
-                    "valueString": "PREGDAT,PREGRES",
+                    "valueString": "PREGCBP,PREGDAT,PREGTYP,PREGRES",
                     "extensionAttributes": [],
                     "instanceType": "ExtensionAttribute"
                   }
