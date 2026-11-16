@@ -163,11 +163,9 @@ describe('USDM from the Protocol Builder', () => {
     }
   })
   test('VASCLEAR-2 written in the Protocol Builder gives the same draft as the lab’s own file', () => {
-    // The one difference is deliberate: the Protocol Builder's VASCLEAR-2 collects adverse events
-    // and medications from consent (its 9.2.1 and schedule agree), so they are scheduled at
-    // screening too; the lab's own file follows the original schedule footnote (from Day 1).
+    // Both files schedule adverse events and medications from screening (9.2.1: from consent).
     const a = generateBuild(fixture('HLV-204-201-usdm.json')).build, b = generateBuild(usdmOf()).build
-    const shape = (x: typeof a) => x.visits.map((v) => [v.id, v.lo, v.hi, v.forms.filter((f) => v.id !== 'SCR' || !['AE', 'CM'].includes(f)).sort()])
+    const shape = (x: typeof a) => x.visits.map((v) => [v.id, v.lo, v.hi, [...v.forms].sort()])
     expect(shape(a)).toEqual(shape(b))
     expect(a.visits[0].forms).toEqual(expect.arrayContaining(['AE', 'CM']))
     expect(Object.keys(a.forms).sort()).toEqual(Object.keys(b.forms).sort())

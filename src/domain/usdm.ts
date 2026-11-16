@@ -36,7 +36,9 @@ export function usdmOf(pr: ProtocolDef = protocolOf({})) {
       windowLower: dur(nominal - v.lo), windowUpper: dur(v.hi - nominal), windowLabel: `Day ${v.lo} to ${v.hi}`, instanceType: 'Timing' }
   })
   const continuous = (p: (typeof pr.procedures)[number]) => p.visits === 'continuous'
-  const activityIdsAt = (vid: string) => pr.procedures.filter((p) => (continuous(p) ? vid !== 'SCR' : (p.visits as string[]).includes(vid))).map((p) => `Activity_${p.id}`)
+  // Adverse events and medications are collected from informed consent (section 9.2.1, which governs
+  // over the schedule footnote), so they are scheduled from screening, as in the Protocol Builder.
+  const activityIdsAt = (vid: string) => pr.procedures.filter((p) => (continuous(p) ? true : (p.visits as string[]).includes(vid))).map((p) => `Activity_${p.id}`)
   return {
     usdmVersion: '4.0.0', systemName: 'EDC Study Build Lab', systemVersion: '1',
     study: {
@@ -76,10 +78,24 @@ const CONCEPT_FORM: Record<string, string> = {
   'Study Drug Dispensing and Accountability': 'EX', 'Adverse Event': 'AE', 'Concomitant Medication': 'CM', Disposition: 'EOS',
 }
 const CONTINUOUS = new Set(['AE', 'CM'])
-const days = (d: string) => Number(/^P(\d+)D$/.exec(d)?.[1] ?? NaN)
+const days = (d?: string | null) => (d == null ? 0 : Number(/^P(\d+)D$/.exec(d)?.[1] ?? NaN))
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyUsdm = any
 const formFor = (isHlv: boolean, pid: string, concept?: string) => (isHlv ? BC[pid]?.form ?? '' : CONCEPT_FORM[concept ?? ''] ?? '')
+
+
+// What an activity measures: its biomedical concept category (a Protocol Builder file groups the
+// CDISC concepts of each procedure in one), a surrogate (for a concept the CDISC library lacks), or
+// its first biomedical concept; and the CDASH fields, from the activity's extension when present.
+const CDASH_EXT = /\/ext\/cdash-fields$/
+function conceptOf(v: AnyUsdm, a: AnyUsdm): { name?: string; fields: string[] } {
+  const cat = (v.bcCategories ?? []).find((c: AnyUsdm) => c.id === a.bcCategoryIds?.[0])
+  const sur = (v.bcSurrogates ?? []).find((c: AnyUsdm) => c.id === a.bcSurrogateIds?.[0])
+  const bc = (v.biomedicalConcepts ?? []).find((x: AnyUsdm) => x.id === a.biomedicalConceptIds?.[0])
+  const ext = (a.extensionAttributes ?? []).find((x: AnyUsdm) => CDASH_EXT.test(x.url ?? ''))
+  const fields = ext?.valueString ? String(ext.valueString).split(',').filter(Boolean) : (bc?.properties ?? []).map((x: AnyUsdm) => x.name)
+  return { name: cat?.name ?? sur?.name ?? bc?.name, fields }
+}
 
 // The protocol as the USDM file states it (read correctly, unlike the generator below).
 export function protocolFromUsdm(u: AnyUsdm): ProtocolDef {
@@ -92,10 +108,10 @@ export function protocolFromUsdm(u: AnyUsdm): ProtocolDef {
     return { id: e.name, name: e.label || e.name, lo: day - (t ? days(t.windowLower) : 0), hi: day + (t ? days(t.windowUpper) : 0) }
   })
   const procedures = d.activities.map((a: AnyUsdm) => {
-    const pid = String(a.id).replace('Activity_', ''), bc = v.biomedicalConcepts.find((x: AnyUsdm) => x.id === a.biomedicalConceptIds?.[0])
-    const form = formFor(false, pid, bc?.name) || `F${pid.replace(/^P/, '')}`
+    const pid = String(a.id).replace('Activity_', ''), c = conceptOf(v, a)
+    const form = formFor(false, pid, c.name) || `F${pid.replace(/^P/, '')}`
     const at = tl.instances.filter((x: AnyUsdm) => x.activityIds.includes(a.id)).map((x: AnyUsdm) => d.encounters.find((e: AnyUsdm) => e.id === x.encounterId)?.name).filter(Boolean)
-    return { id: pid, name: a.name, section: String(a.description ?? '').replace(/^Protocol section /, ''), form, fields: (bc?.properties ?? []).map((x: AnyUsdm) => x.name), visits: CONTINUOUS.has(form) ? 'continuous' as const : at, note: a.notes?.[0]?.text }
+    return { id: pid, name: a.name, section: String(a.description ?? '').replace(/^Protocol section /, ''), form, fields: c.fields, visits: CONTINUOUS.has(form) ? 'continuous' as const : at, note: a.notes?.[0]?.text }
   })
   const crit = d.eligibilityCriteria.map((c: AnyUsdm) => ({ code: c.identifier, text: v.eligibilityCriterionItems.find((i: AnyUsdm) => i.id === c.criterionItemId)?.text ?? '', cat: c.category?.decode ?? '' }))
   const titlePage: Record<string, string> = { 'Full Title': v.titles?.[0]?.text ?? '', 'Sponsor Protocol Identifier': v.studyIdentifiers?.[0]?.text ?? '' }
@@ -136,15 +152,14 @@ export function generateBuild(u: Usdm | AnyUsdm): { build: StudyBuild; notes: st
   // Forms: from each activity's biomedical concept.
   const unmapped: string[] = []
   for (const a of d.activities) {
-    const bcId = a.biomedicalConceptIds?.[0]
-    const bc = v.biomedicalConcepts.find((x: AnyUsdm) => x.id === bcId)
+    const c = conceptOf(v, a)
     const pid = String(a.id).replace('Activity_', '')
-    let fid = formFor(isHlv, pid, bc?.name)
+    let fid = formFor(isHlv, pid, c.name)
     if (!fid) {
       // No form in the library for this concept: a generic form from the concept's properties.
       fid = `F${pid.replace(/^P/, '')}`
-      if (!b.forms[fid]) b.forms[fid] = { id: fid, name: bc?.name ?? a.name, domain: 'XX', fields: (bc?.properties ?? []).map((p: AnyUsdm) => ({ id: p.name, label: p.label, type: 'text' as const })) }
-      unmapped.push(`${a.name}: no CDASH form for the concept "${bc?.name}", so a generic form ${fid} was made with text fields (${(bc?.properties ?? []).map((p: AnyUsdm) => p.name).join(', ')}). Check the form, its domain, field types and codelists.`)
+      if (!b.forms[fid]) b.forms[fid] = { id: fid, name: c.name ?? a.name, domain: 'XX', fields: c.fields.map((f) => ({ id: f, label: f, type: 'text' as const })) }
+      unmapped.push(`${a.name}: no CDASH form for the concept "${c.name}", so a generic form ${fid} was made with text fields (${c.fields.join(', ')}). Check the form, its domain, field types and codelists.`)
     } else lib(fid)
     for (const si of tl.instances.filter((x: AnyUsdm) => x.activityIds.includes(a.id))) {
       const vis = b.visits.find((x) => `SAI_${x.id}` === si.id)
